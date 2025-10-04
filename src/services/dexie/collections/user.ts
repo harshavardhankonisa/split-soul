@@ -1,26 +1,19 @@
 import { db } from '../client'
 import type { User } from '../../../interface/database'
 import { getEmbeddingFromText } from '../../transformers/embedder'
+import { normalizeVector } from '../../../utils/math'
+import { topKSimilar } from '../../../utils/math'
+import createLRU from '../../../utils/cache'
 
 const CACHE_TTL_MS = 1000 * 60 * 5 // 5 minutes
 
-type UsersCache = {
-  ts: number
-  users: User[]
-}
-
-let allUsersCache: UsersCache | null = null
-const userByIdCache = new Map<number, { ts: number; user: User }>()
+// LRU caches: one for individual users, one for the full users list
+const userByIdCache = createLRU({ max: 2000, ttl: CACHE_TTL_MS })
+const allUsersCache = createLRU({ max: 1, ttl: CACHE_TTL_MS })
 
 function invalidateCachesForUser(id?: number) {
-  allUsersCache = null
-  if (typeof id === 'number') {
-    userByIdCache.delete(id)
-  }
-}
-
-function isCacheFresh(ts: number) {
-  return Date.now() - ts <= CACHE_TTL_MS
+  allUsersCache.delete('all')
+  if (typeof id === 'number') userByIdCache.delete(String(id))
 }
 
 async function withEmbedding(user: User): Promise<User> {
@@ -60,11 +53,11 @@ export async function updateUser(id: number, changes: Partial<User>) {
 
 // READ
 export async function getUser(id: number) {
-  const cached = userByIdCache.get(id)
-  if (cached && isCacheFresh(cached.ts)) return cached.user
+  const cached = userByIdCache.get(String(id))
+  if (cached) return cached as User
   try {
     const user = await db.users.get(id)
-    if (user) userByIdCache.set(id, { ts: Date.now(), user })
+    if (user) userByIdCache.set(String(id), user)
     return user
   } catch (error) {
     console.error(`Error fetching user with ID ${id}:`, error)
@@ -86,19 +79,19 @@ export async function deleteUser(id: number) {
 
 // GET ALL
 export async function getAllUsers() {
-  if (allUsersCache && isCacheFresh(allUsersCache.ts)) return allUsersCache.users
+  const cached = allUsersCache.get('all')
+  if (cached) return cached
 
   try {
     const users = await db.users.toArray()
 
     const normalized = users.map(u => {
       if (!u.vector || u.vector === null) return u
-      const mag = Math.sqrt(u.vector.reduce((s, v) => s + v * v, 0)) || 1
-      return { ...u, vector: u.vector.map(v => v / mag) }
+      return { ...u, vector: normalizeVector(u.vector) }
     })
 
-    allUsersCache = { ts: Date.now(), users: normalized }
-    for (const u of normalized) userByIdCache.set(u.id as number, { ts: Date.now(), user: u })
+    allUsersCache.set('all', normalized)
+    for (const u of normalized) if (u.id) userByIdCache.set(String(u.id), u)
 
     return normalized
   } catch (error) {
@@ -111,8 +104,7 @@ export async function getAllUsers() {
 export async function searchUsersByVector(query: string) {
   try {
     const queryVectorRaw = await getEmbeddingFromText(query)
-    const magnitudeQ = Math.sqrt(queryVectorRaw.reduce((sum, val) => sum + val * val, 0)) || 1
-    const queryVector = queryVectorRaw.map(v => v / magnitudeQ)
+    const queryVector = normalizeVector(queryVectorRaw)
 
     const users = await getAllUsers()
     if (!users.length) return []
@@ -121,22 +113,12 @@ export async function searchUsersByVector(query: string) {
 
     const SIM_THRESHOLD = 0.3
 
-    const scored: { user: User; similarity: number }[] = []
-    for (let i = 0; i < users.length; i++) {
-      const u = users[i]
-      if (!u.vector) continue
-      const vec = u.vector
-      const len = Math.min(vec.length, queryVector.length)
-      let dot = 0
-      for (let j = 0; j < len; j++) dot += vec[j] * queryVector[j]
-      if (dot >= SIM_THRESHOLD) scored.push({ user: u, similarity: dot })
-    }
+    const sims = topKSimilar<User>(users, u => u.vector as number[] | undefined, queryVector, topK, {
+      normalize: false,
+      minSimilarity: SIM_THRESHOLD
+    })
 
-    if (!scored.length) return []
-
-    scored.sort((a, b) => b.similarity - a.similarity)
-
-    return scored.slice(0, topK).map(s => s.user)
+    return sims.map(s => s.item)
   } catch (error) {
     console.error('Error searching users by vector:', error)
     throw new Error('Failed to search users by vector')
