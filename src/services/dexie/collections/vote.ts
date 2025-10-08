@@ -1,22 +1,85 @@
 import { db } from '../client'
-import type { VoteAgenda } from '../../../interface/database'
+import type { Vote } from '../../../interface/database'
+import createLRU from '../../../utils/cache'
 
-// CREATE or UPDATE
-export async function upsertVoteAgenda(voteAgenda: VoteAgenda) {
-  return db.votes.put(voteAgenda)
+const CACHE_TTL_MS = 1000 * 60 * 5 // 5 minutes
+
+// LRU caches: one for individual votes, one for the full votes list
+const voteByIdCache = createLRU({ max: 2000, ttl: CACHE_TTL_MS })
+const allVotesCache = createLRU({ max: 1, ttl: CACHE_TTL_MS })
+
+function invalidateCachesForVote(id?: number) {
+  allVotesCache.delete('all')
+  if (typeof id === 'number') voteByIdCache.delete(String(id))
 }
 
-// READ
-export async function getVoteAgenda(id: number) {
-  return db.votes.get(id)
+// CREATE VOTE
+export async function createvote(vote: Vote) {
+  try {
+    const id = await db.votes.add(vote)
+    invalidateCachesForVote(id as number)
+    return id
+  } catch (error) {
+    console.error('Error creating vote:', error)
+    throw new Error('Failed to create vote')
+  }
 }
 
-// DELETE
-export async function deleteVoteAgenda(id: number) {
-  return db.votes.delete(id)
+// UPDATE VOTE BY ID
+export async function updateVote(id: number, changes: Partial<Vote>) {
+  try {
+    const existing = await db.votes.get(id)
+    if (!existing) return null
+    const updated = { ...existing, ...changes }
+    await db.votes.put(updated)
+    invalidateCachesForVote(id)
+    return updated
+  } catch (error) {
+    console.error(`Error updating vote with ID ${id}:`, error)
+    throw new Error('Failed to update vote')
+  }
 }
 
-// GET ALL
-export async function getAllVoteAgendas() {
-  return db.votes.toArray()
+// READ VOTE BY ID
+export async function getVote(id: number) {
+  const cached = voteByIdCache.get(String(id))
+  if (cached) return cached as Vote
+  try {
+    const vote = await db.votes.get(id)
+    if (vote) voteByIdCache.set(String(id), vote)
+    return vote
+  } catch (error) {
+    console.error(`Error fetching vote with ID ${id}:`, error)
+    throw new Error('Failed to fetch vote')
+  }
+}
+
+// DELETE VOTE BY ID
+export async function deleteVote(id: number) {
+  try {
+    const res = await db.votes.delete(id)
+    invalidateCachesForVote(id)
+    return res
+  } catch (error) {
+    console.error(`Error deleting vote with ID ${id}:`, error)
+    throw new Error('Failed to delete vote')
+  }
+}
+
+// GET ALL VOTES
+export async function getAllVotes() {
+  const cached = allVotesCache.get('all')
+  if (cached) return cached
+
+  try {
+    const votes = await db.votes.toArray()
+
+    allVotesCache.set('all', votes)
+    for (const u of votes) if (u.id) voteByIdCache.set(String(u.id), u)
+
+    return votes
+  } catch (error) {
+    console.error('Error fetching all votes:', error)
+    throw new Error('Failed to fetch votes')
+  }
 }

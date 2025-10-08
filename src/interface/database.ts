@@ -77,7 +77,7 @@ export interface Task {
 }
 
 // Voting Fields
-export interface VoteAgenda {
+export interface Vote {
   id: number
   title: string
   description: string
