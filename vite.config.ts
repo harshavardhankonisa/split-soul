@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       input: {
         popup: resolve(__dirname, 'src/popup/index.html'),
