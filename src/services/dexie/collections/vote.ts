@@ -33,6 +33,7 @@ export async function updateVote(id: number, changes: Partial<Vote>) {
     const updated = { ...existing, ...changes }
     await db.votes.put(updated)
     invalidateCachesForVote(id)
+    voteByIdCache.set(String(id), updated)
     return updated
   } catch (error) {
     console.error(`Error updating vote with ID ${id}:`, error)
@@ -75,7 +76,7 @@ export async function getAllVotes() {
     const votes = await db.votes.toArray()
 
     allVotesCache.set('all', votes)
-    for (const u of votes) if (u.id) voteByIdCache.set(String(u.id), u)
+    for (const v of votes) if (v.id) voteByIdCache.set(String(v.id), v)
 
     return votes
   } catch (error) {

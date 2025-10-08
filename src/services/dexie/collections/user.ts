@@ -43,6 +43,7 @@ export async function updateUser(id: number, changes: Partial<User>) {
     const updatedWithVector = await withUserEmbedding(updated as User)
     await db.users.put(updatedWithVector)
     invalidateCachesForUser(id)
+    userByIdCache.set(String(id), updatedWithVector)
     return updatedWithVector
   } catch (error) {
     console.error(`Error updating user with ID ${id}:`, error)
@@ -84,15 +85,10 @@ export async function getAllUsers() {
   try {
     const users = await db.users.toArray()
 
-    const normalized = users.map(u => {
-      if (!u.vector || u.vector === null) return u
-      return { ...u, vector: u.vector }
-    })
+    allUsersCache.set('all', users)
+    for (const u of users) if (u.id) userByIdCache.set(String(u.id), u)
 
-    allUsersCache.set('all', normalized)
-    for (const u of normalized) if (u.id) userByIdCache.set(String(u.id), u)
-
-    return normalized
+    return users
   } catch (error) {
     console.error('Error fetching all users:', error)
     throw new Error('Failed to fetch users')
