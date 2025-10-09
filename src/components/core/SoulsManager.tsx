@@ -57,7 +57,8 @@ export default function SoulsManager() {
       createdAt: form.createdAt ?? now,
       modifiedAt: now,
       isActive: true,
-      isEditable: true
+      isEditable: true,
+      vector: []
     })
     setOpen(false)
     getAllUsers().then(setUsers)

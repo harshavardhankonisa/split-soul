@@ -1,21 +1,18 @@
 import { db } from '../client'
 import type { Activity } from '../../../interface/database'
 import { getEmbeddingFromText } from '../../transformers/embedder'
-import createLRU from '../../../utils/cache'
+import createLRU, { cacheDel, cacheGet, cacheSet } from '../../../utils/cache'
 import { semanticSimilaritySearch } from '../../transformers/vector-search'
 
-const CACHE_TTL_MS = 1000 * 60 * 5 // 5 minutes
+const CACHE_TTL_MS = 1000 * 60 * 5
+const allActivitysCache = createLRU<Activity[]>({ max: 1, ttl: CACHE_TTL_MS })
 
-// LRU caches: one for individual activities, one for the full activities list
-const activityByIdCache = createLRU({ max: 2000, ttl: CACHE_TTL_MS })
-const allActivitiesCache = createLRU({ max: 1, ttl: CACHE_TTL_MS })
-
-function invalidateCachesForActivity(id?: number) {
-  allActivitiesCache.delete('all')
-  if (typeof id === 'number') activityByIdCache.delete(String(id))
+function invalidateCachesForActivity() {
+  cacheDel(allActivitysCache, 'all')
 }
 
 async function withActivityEmbedding(activity: Activity): Promise<Activity> {
+  // TODO: add necesary items here to store vectors not only username and description
   const textForEmbedding = `${activity.type} ${activity.action} ${activity.description} ${activity.tags}`
   const vector = await getEmbeddingFromText(textForEmbedding)
   return { ...activity, vector }
@@ -25,9 +22,8 @@ async function withActivityEmbedding(activity: Activity): Promise<Activity> {
 export async function createActivity(activity: Activity) {
   try {
     const activityWithVector = await withActivityEmbedding(activity)
-    const id = await db.activities.add(activityWithVector)
-    invalidateCachesForActivity(id as number)
-    return id
+    invalidateCachesForActivity()
+    return await db.activities.add(activityWithVector)
   } catch (error) {
     console.error('Error creating activity:', error)
     throw new Error('Failed to create activity')
@@ -41,10 +37,8 @@ export async function updateActivity(id: number, changes: Partial<Activity>) {
     if (!existing) return null
     const updated = { ...existing, ...changes }
     const updatedWithVector = await withActivityEmbedding(updated as Activity)
-    await db.activities.put(updatedWithVector)
-    invalidateCachesForActivity(id)
-    activityByIdCache.set(String(id), updatedWithVector)
-    return updatedWithVector
+    invalidateCachesForActivity()
+    return await db.activities.put(updatedWithVector)
   } catch (error) {
     console.error(`Error updating activity with ID ${id}:`, error)
     throw new Error('Failed to update activity')
@@ -53,12 +47,8 @@ export async function updateActivity(id: number, changes: Partial<Activity>) {
 
 // READ ACTIVITY BY ID
 export async function getActivity(id: number) {
-  const cached = activityByIdCache.get(String(id))
-  if (cached) return cached as Activity
   try {
-    const activity = await db.activities.get(id)
-    if (activity) activityByIdCache.set(String(id), activity)
-    return activity
+    return await db.activities.get(id)
   } catch (error) {
     console.error(`Error fetching activity with ID ${id}:`, error)
     throw new Error('Failed to fetch activity')
@@ -68,9 +58,8 @@ export async function getActivity(id: number) {
 // DELETE ACTIVITY BY ID
 export async function deleteActivity(id: number) {
   try {
-    const res = await db.activities.delete(id)
-    invalidateCachesForActivity(id)
-    return res
+    invalidateCachesForActivity()
+    return await db.activities.delete(id)
   } catch (error) {
     console.error(`Error deleting activity with ID ${id}:`, error)
     throw new Error('Failed to delete activity')
@@ -78,16 +67,12 @@ export async function deleteActivity(id: number) {
 }
 
 // GET ALL ACTIVITIES
-export async function getAllActivities() {
-  const cached = allActivitiesCache.get('all')
+export async function getAllActivitys() {
+  const cached = cacheGet(allActivitysCache, 'all')
   if (cached) return cached
-
   try {
     const activities = await db.activities.toArray()
-
-    allActivitiesCache.set('all', activities)
-    for (const a of activities) if (a.id) activityByIdCache.set(String(a.id), a)
-
+    cacheSet(allActivitysCache, 'all', activities)
     return activities
   } catch (error) {
     console.error('Error fetching all activities:', error)
@@ -96,14 +81,12 @@ export async function getAllActivities() {
 }
 
 // VECTOR SEARCH
-export async function searchActivitiesByVector(query: string) {
+export async function searchActivitysByVector(query: string) {
   try {
-    const activities = await getAllActivities()
+    const activities = await getAllActivitys()
     if (!activities.length) return []
-
     const queryVector = await getEmbeddingFromText(query)
-    const results = semanticSimilaritySearch(activities, queryVector)
-
+    const results = semanticSimilaritySearch<Activity>(activities, queryVector)
     return results.map(r => r.item)
   } catch (error) {
     console.error('Error searching activities by vector:', error)

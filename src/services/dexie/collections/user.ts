@@ -1,14 +1,14 @@
 import { db } from '../client'
 import type { User } from '../../../interface/database'
 import { getEmbeddingFromText } from '../../transformers/embedder'
-import createLRU from '../../../utils/cache'
+import createLRU, { cacheDel, cacheGet, cacheSet } from '../../../utils/cache'
 import { semanticSimilaritySearch } from '../../transformers/vector-search'
 
 const CACHE_TTL_MS = 1000 * 60 * 5
-const allUsersCache = createLRU({ max: 1, ttl: CACHE_TTL_MS })
+const allUsersCache = createLRU<User[]>({ max: 1, ttl: CACHE_TTL_MS })
 
 function invalidateCachesForUser() {
-  allUsersCache.delete('all')
+  cacheDel(allUsersCache, 'all')
 }
 
 async function withUserEmbedding(user: User): Promise<User> {
@@ -23,8 +23,7 @@ export async function createUser(user: User) {
   try {
     const userWithVector = await withUserEmbedding(user)
     invalidateCachesForUser()
-    const id = await db.users.add(userWithVector)
-    return id
+    return await db.users.add(userWithVector)
   } catch (error) {
     console.error('Error creating user:', error)
     throw new Error('Failed to create user')
@@ -39,8 +38,7 @@ export async function updateUser(id: number, changes: Partial<User>) {
     const updated = { ...existing, ...changes }
     const updatedWithVector = await withUserEmbedding(updated as User)
     invalidateCachesForUser()
-    await db.users.put(updatedWithVector)
-    return updatedWithVector
+    return await db.users.put(updatedWithVector)
   } catch (error) {
     console.error(`Error updating user with ID ${id}:`, error)
     throw new Error('Failed to update user')
@@ -70,11 +68,11 @@ export async function deleteUser(id: number) {
 
 // GET ALL USERS
 export async function getAllUsers() {
-  const cached = allUsersCache.get('all')
+  const cached = cacheGet(allUsersCache, 'all')
   if (cached) return cached
   try {
     const users = await db.users.toArray()
-    allUsersCache.set('all', users)
+    cacheSet(allUsersCache, 'all', users)
     return users
   } catch (error) {
     console.error('Error fetching all users:', error)
@@ -87,11 +85,9 @@ export async function searchUsersByVector(query: string) {
   try {
     const users = await getAllUsers()
     if (!users.length) return []
-
     const queryVector = await getEmbeddingFromText(query)
-    const results = semanticSimilaritySearch(users, queryVector)
-
-    return results.map(r => r.item) as unknown as User[]
+    const results = semanticSimilaritySearch<User>(users, queryVector)
+    return results.map(r => r.item)
   } catch (error) {
     console.error('Error searching users by vector:', error)
     throw new Error('Failed to search users by vector')

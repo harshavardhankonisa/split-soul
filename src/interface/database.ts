@@ -10,7 +10,7 @@ export interface User {
   modifiedAt: Date
   isActive: boolean
   isEditable: boolean
-  vector?: number[]
+  vector: number[]
 }
 
 // Activity Fields
@@ -37,7 +37,7 @@ export interface Activity {
   createdAt: Date
   createdBy: string
   description: string
-  vector?: number[]
+  vector: number[]
 }
 
 // Chat Fields
@@ -46,7 +46,7 @@ export interface Chat {
   user: User
   message: string
   createdAt: Date
-  vector?: number[]
+  vector: number[]
 }
 
 // Action Fields
@@ -58,7 +58,7 @@ export interface Action {
   createdBy: User
   priority: Priority
   isCompleted: boolean
-  vector?: number[]
+  vector: number[]
 }
 
 // Task Fields
@@ -73,7 +73,7 @@ export interface Task {
   dueDate: Date | null
   createdAt: Date
   modifiedAt: Date
-  vector?: number[]
+  vector: number[]
 }
 
 // Voting Fields
