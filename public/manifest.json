@@ -13,7 +13,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Advanced Demo",
+    "default_title": "Split Soul - Dashboard",
     "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "icons/icon16.png",

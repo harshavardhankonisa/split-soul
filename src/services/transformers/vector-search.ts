@@ -17,7 +17,6 @@ export function semanticSimilaritySearch<T extends VectorItem>(
   const sims: number[] = []
   const results: { item: T; similarity: number }[] = []
 
-  // Step 1: Compute cosine similarities
   for (const item of items) {
     if (!item.vector || item.vector.length === 0) continue
     const sim = cos_sim(queryVector, item.vector)

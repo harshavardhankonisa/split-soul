@@ -4,18 +4,15 @@ import { getEmbeddingFromText } from '../../transformers/embedder'
 import createLRU from '../../../utils/cache'
 import { semanticSimilaritySearch } from '../../transformers/vector-search'
 
-const CACHE_TTL_MS = 1000 * 60 * 5 // 5 minutes
-
-// LRU caches: one for individual users, one for the full users list
-const userByIdCache = createLRU({ max: 2000, ttl: CACHE_TTL_MS })
+const CACHE_TTL_MS = 1000 * 60 * 5
 const allUsersCache = createLRU({ max: 1, ttl: CACHE_TTL_MS })
 
-function invalidateCachesForUser(id?: number) {
+function invalidateCachesForUser() {
   allUsersCache.delete('all')
-  if (typeof id === 'number') userByIdCache.delete(String(id))
 }
 
 async function withUserEmbedding(user: User): Promise<User> {
+  // TODO: add necesary items here to store vectors not only username and description
   const textForEmbedding = `${user.username} ${user.description}`
   const vector = await getEmbeddingFromText(textForEmbedding)
   return { ...user, vector, modifiedAt: new Date() }
@@ -25,8 +22,8 @@ async function withUserEmbedding(user: User): Promise<User> {
 export async function createUser(user: User) {
   try {
     const userWithVector = await withUserEmbedding(user)
+    invalidateCachesForUser()
     const id = await db.users.add(userWithVector)
-    invalidateCachesForUser(id as number)
     return id
   } catch (error) {
     console.error('Error creating user:', error)
@@ -41,9 +38,8 @@ export async function updateUser(id: number, changes: Partial<User>) {
     if (!existing) return null
     const updated = { ...existing, ...changes }
     const updatedWithVector = await withUserEmbedding(updated as User)
+    invalidateCachesForUser()
     await db.users.put(updatedWithVector)
-    invalidateCachesForUser(id)
-    userByIdCache.set(String(id), updatedWithVector)
     return updatedWithVector
   } catch (error) {
     console.error(`Error updating user with ID ${id}:`, error)
@@ -53,12 +49,8 @@ export async function updateUser(id: number, changes: Partial<User>) {
 
 // READ USER BY ID
 export async function getUser(id: number) {
-  const cached = userByIdCache.get(String(id))
-  if (cached) return cached as User
   try {
-    const user = await db.users.get(id)
-    if (user) userByIdCache.set(String(id), user)
-    return user
+    return await db.users.get(id)
   } catch (error) {
     console.error(`Error fetching user with ID ${id}:`, error)
     throw new Error('Failed to fetch user')
@@ -68,9 +60,8 @@ export async function getUser(id: number) {
 // DELETE USER BY ID
 export async function deleteUser(id: number) {
   try {
-    const res = await db.users.delete(id)
-    invalidateCachesForUser(id)
-    return res
+    invalidateCachesForUser()
+    return await db.users.delete(id)
   } catch (error) {
     console.error(`Error deleting user with ID ${id}:`, error)
     throw new Error('Failed to delete user')
@@ -81,13 +72,9 @@ export async function deleteUser(id: number) {
 export async function getAllUsers() {
   const cached = allUsersCache.get('all')
   if (cached) return cached
-
   try {
     const users = await db.users.toArray()
-
     allUsersCache.set('all', users)
-    for (const u of users) if (u.id) userByIdCache.set(String(u.id), u)
-
     return users
   } catch (error) {
     console.error('Error fetching all users:', error)
@@ -104,7 +91,7 @@ export async function searchUsersByVector(query: string) {
     const queryVector = await getEmbeddingFromText(query)
     const results = semanticSimilaritySearch(users, queryVector)
 
-    return results.map(r => r.item)
+    return results.map(r => r.item) as unknown as User[]
   } catch (error) {
     console.error('Error searching users by vector:', error)
     throw new Error('Failed to search users by vector')
