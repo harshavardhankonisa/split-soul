@@ -31,12 +31,19 @@ export interface ActivityActions {
 
 export interface Activity {
   id: number
-  type: ActivityTypes
-  action: ActivityActions
   tags: ActivityTag[]
+  websiteName: string
+  websiteUrl: string
+  summary: string
+  tabId: number
+  isActive: boolean
+  startTime: Date
+  endTime: Date
+  lastActivityTime: Date
+  activeDuration: number // in milliseconds
+  totalDuration: number // in milliseconds
   createdAt: Date
-  createdBy: string
-  description: string
+  updatedAt: Date
   vector: number[]
 }
 
