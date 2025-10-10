@@ -2,6 +2,7 @@ import { Container } from '@mui/material'
 import PopupSettings from '../components/core/PopupSettings'
 import PopupArena from '../components/core/PopupArena'
 import React from 'react'
+import Home from '../components/core/Home'
 import ActionsManager from '../components/core/ActionsManager'
 import ChatManager from '../components/core/ChatManager'
 import SoulsManager from '../components/core/SoulsManager'
@@ -19,7 +20,7 @@ export default function Popup() {
     {
       label: 'Home',
       description: 'Welcome to Split Soul! Select a tab to get started.',
-      component: null,
+      component: <Home />,
       icon: <HomeIcon />
     },
     {
