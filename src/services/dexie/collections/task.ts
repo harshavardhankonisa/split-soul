@@ -2,7 +2,7 @@ import { db } from '../client'
 import type { Task } from '../../../interface/database'
 import { getEmbeddingFromText } from '../../transformers/embedder'
 import createLRU, { cacheDel, cacheGet, cacheSet } from '../../../utils/cache'
-import { semanticSimilaritySearch } from '../../transformers/vector-search'
+import { semanticSimilaritySearch } from '../../transformers/vectorSearch'
 
 const CACHE_TTL_MS = 1000 * 60 * 5
 const allTasksCache = createLRU<Task[]>({ max: 1, ttl: CACHE_TTL_MS })

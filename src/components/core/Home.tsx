@@ -24,6 +24,7 @@ class ChromePromptLLM extends LLM {
       session.destroy()
       return response
     } catch (error) {
+      console.error(error)
       return 'Chrome LanguageModel API not available or failed'
     }
   }
