@@ -1,5 +1,6 @@
 import { activityTracker } from '../services/activityTracker'
 import { handleActivityAPICall } from '../services/activityAPI'
+import { chatAgent } from '../services/chatManager'
 
 export const setupOnMessage = () => {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -15,6 +16,10 @@ export const setupOnMessage = () => {
 
     if (message.type === 'GET_CURRENT_TAB_INFO') {
       sendResponse(sender.tab)
+    }
+
+    if (message.type === 'TRIGGER_CHAT_REFRESH') {
+      chatAgent.refreshSouls()
     }
 
     return true
