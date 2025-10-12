@@ -178,6 +178,28 @@ class ActivityTracker {
         }
       }
     })
+
+    chrome.windows.onRemoved.addListener(async () => {
+      const tabsToRemove: number[] = []
+      for (const [tabId] of this.activeActivities) {
+        try {
+          await chrome.tabs.get(tabId)
+        } catch {
+          tabsToRemove.push(tabId)
+        }
+      }
+      for (const tabId of tabsToRemove) {
+        await this.endActivity(tabId)
+      }
+    })
+
+    chrome.tabs.onReplaced.addListener(async removedTabId => {
+      await this.endActivity(removedTabId)
+    })
+
+    chrome.runtime.onStartup.addListener(async () => {
+      await this.restoreActiveActivities()
+    })
   }
 
   public handleUserActivity(sender: chrome.runtime.MessageSender) {
