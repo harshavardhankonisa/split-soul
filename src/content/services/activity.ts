@@ -5,14 +5,15 @@ declare global {
 }
 
 class UserActivityDetector {
-  private lastActivityTime: number = Date.now()
   private isActive: boolean = true
   private activityThrottle: number = 1000
   private lastUpdateSent: number = 0
+  private audioCheckInterval: number = 5000
 
   constructor() {
     this.setupActivityListeners()
     this.notifyBackgroundOfActivity()
+    this.setupAudioMonitoring()
   }
 
   private setupActivityListeners() {
@@ -37,43 +38,14 @@ class UserActivityDetector {
 
     // Focus events
     window.addEventListener('focus', this.handleActivity.bind(this), { passive: true })
-    window.addEventListener('blur', this.handleInactivity.bind(this), { passive: true })
+    window.addEventListener('blur', async () => await this.handleWindowBlur(), { passive: true })
 
     // Visibility change
-    document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this))
-  }
-
-  private removeActivityListeners() {
-    // Mouse events
-    document.removeEventListener('mousemove', this.handleActivity.bind(this))
-    document.removeEventListener('mousedown', this.handleActivity.bind(this))
-    document.removeEventListener('mouseup', this.handleActivity.bind(this))
-    document.removeEventListener('click', this.handleActivity.bind(this))
-    document.removeEventListener('wheel', this.handleActivity.bind(this))
-
-    // Keyboard events
-    document.removeEventListener('keydown', this.handleActivity.bind(this))
-    document.removeEventListener('keyup', this.handleActivity.bind(this))
-
-    // Scroll events
-    document.removeEventListener('scroll', this.handleActivity.bind(this))
-
-    // Touch events
-    document.removeEventListener('touchstart', this.handleActivity.bind(this))
-    document.removeEventListener('touchmove', this.handleActivity.bind(this))
-    document.removeEventListener('touchend', this.handleActivity.bind(this))
-
-    // Focus events
-    window.removeEventListener('focus', this.handleActivity.bind(this))
-    window.removeEventListener('blur', this.handleInactivity.bind(this))
-
-    // Visibility change
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange.bind(this))
+    document.addEventListener('visibilitychange', async () => await this.handleVisibilityChange())
   }
 
   private handleActivity() {
     const now = Date.now()
-    this.lastActivityTime = now
 
     if (!this.isActive) {
       this.isActive = true
@@ -87,8 +59,26 @@ class UserActivityDetector {
     this.isActive = false
   }
 
-  private handleVisibilityChange() {
-    if (document.hidden) {
+  private async isAudioPlaying(): Promise<boolean> {
+    try {
+      const tabInfo = await chrome.runtime.sendMessage({
+        type: 'GET_CURRENT_TAB_INFO'
+      })
+      return tabInfo?.audible || false
+    } catch (error) {
+      console.debug('Error checking audio status:', error)
+      return false
+    }
+  }
+
+  private async handleWindowBlur() {
+    if (!(await this.isAudioPlaying())) {
+      this.handleInactivity()
+    }
+  }
+
+  private async handleVisibilityChange() {
+    if (document.hidden && !(await this.isAudioPlaying())) {
       this.handleInactivity()
     } else {
       this.handleActivity()
@@ -103,32 +93,18 @@ class UserActivityDetector {
 
     this.lastUpdateSent = now
 
-    chrome.runtime
-      .sendMessage({
-        type: 'USER_ACTIVITY',
-        data: {
-          timestamp: now,
-          url: window.location.href,
-          title: document.title,
-          isActive: this.isActive
-        }
-      })
-      .catch(error => {
-        console.debug('Could not send activity to background:', error)
-      })
+    chrome.runtime.sendMessage({ type: 'ACTIVITY_TRACKER' }).catch(error => {
+      console.debug('Could not send activity to background:', error)
+    })
   }
 
-  public getActivityStatus() {
-    return {
-      isActive: this.isActive,
-      lastActivityTime: this.lastActivityTime,
-      currentUrl: window.location.href,
-      currentTitle: document.title
-    }
-  }
-
-  public destroy() {
-    this.removeActivityListeners()
+  private setupAudioMonitoring() {
+    setInterval(async () => {
+      const isAudioPlaying = await this.isAudioPlaying()
+      if (!isAudioPlaying && this.isActive) {
+        this.handleInactivity()
+      }
+    }, this.audioCheckInterval)
   }
 }
 

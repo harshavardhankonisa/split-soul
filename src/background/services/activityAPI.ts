@@ -1,18 +1,11 @@
 import ActivityUtils from '../../utils/activity'
 import { activityTracker } from './activityTracker'
 
+// TODO: remvove class based implemetation here.
 class ActivityAPI {
-  static getCurrentActivities() {
-    return activityTracker.getCurrentActivities().map(activity => ({
-      ...activity,
-      formattedActiveDuration: ActivityUtils.formatDuration(activity.activeDuration),
-      formattedTotalDuration: ActivityUtils.formatDuration(activity.totalDuration)
-    }))
-  }
-
   static async getTodaysSummary() {
     try {
-      const currentActivities = this.getCurrentActivities()
+      const currentActivities = activityTracker.getCurrentActivities()
 
       // TODO: Implement database query for today's activities
       const totalActiveTime = 0 // Placeholder

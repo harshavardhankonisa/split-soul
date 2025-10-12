@@ -13,7 +13,8 @@ export class SplitSoulDB extends Dexie {
     super('split_soul_db')
     this.version(1).stores({
       users: '++id, username, createdAt, vector',
-      activities: '++id, websiteUrl, websiteName, startTime, endTime, isActive, createdAt, updatedAt, tabId, vector',
+      activities:
+        '++id, tabId, websiteTitle, websiteUrl, isActive, startTime, endTime, lastActivityTime, activeDuration, createdAt, updatedAt, vector',
       chats: '++id, user.id, createdAt, vector',
       actions: '++id, createdAt, createdBy, vector',
       tasks: '++id, createdAt, modifiedAt, status, vector',

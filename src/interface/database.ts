@@ -1,6 +1,6 @@
 import type { Priority } from './common'
 
-// Souls, Main Soul, Main Body
+// Souls + (Main Soul, Main Body)(default)
 export interface User {
   id: number
   username: string
@@ -14,34 +14,16 @@ export interface User {
 }
 
 // Activity Fields
-export interface ActivityTag {
-  id: number
-  name: string
-}
-
-export interface ActivityTypes {
-  id: number
-  name: string
-}
-
-export interface ActivityActions {
-  id: number
-  name: string
-}
-
 export interface Activity {
   id: number
-  tags: ActivityTag[]
-  websiteName: string
-  websiteUrl: string
-  summary: string
   tabId: number
+  websiteTitle: string
+  websiteUrl: string
   isActive: boolean
   startTime: Date
   endTime: Date
   lastActivityTime: Date
-  activeDuration: number // in milliseconds
-  totalDuration: number // in milliseconds
+  activeDuration: number
   createdAt: Date
   updatedAt: Date
   vector: number[]
@@ -83,7 +65,7 @@ export interface Task {
   vector: number[]
 }
 
-// Voting Fields
+// Vote Fields
 export interface Vote {
   id: number
   title: string
