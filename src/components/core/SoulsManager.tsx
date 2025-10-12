@@ -50,7 +50,6 @@ export default function SoulsManager() {
     if (!form.username) return
     const now = new Date()
     await createUser({
-      id: form.id ?? Date.now(),
       username: form.username,
       description: form.description ?? '',
       avatarUrl: form.avatarUrl ?? '',
