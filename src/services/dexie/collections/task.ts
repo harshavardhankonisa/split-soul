@@ -19,9 +19,9 @@ async function withTaskEmbedding(task: Task): Promise<Task> {
 }
 
 // CREATE TASK
-export async function createTask(task: Task) {
+export async function createTask(task: Omit<Task, 'id'>) {
   try {
-    const taskWithVector = await withTaskEmbedding(task)
+    const taskWithVector = await withTaskEmbedding(task as Task)
     invalidateCachesForTask()
     return await db.tasks.add(taskWithVector)
   } catch (error) {

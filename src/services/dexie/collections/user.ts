@@ -19,9 +19,9 @@ async function withUserEmbedding(user: User): Promise<User> {
 }
 
 // CREATE USER
-export async function createUser(user: User) {
+export async function createUser(user: Omit<User, 'id'>) {
   try {
-    const userWithVector = await withUserEmbedding(user)
+    const userWithVector = await withUserEmbedding(user as User)
     invalidateCachesForUser()
     return await db.users.add(userWithVector)
   } catch (error) {

@@ -10,10 +10,10 @@ function invalidateCachesForVote() {
 }
 
 // CREATE VOTE
-export async function createVote(vote: Vote) {
+export async function createVote(vote: Omit<Vote, 'id'>) {
   try {
     invalidateCachesForVote()
-    return await db.votes.add(vote)
+    return await db.votes.add(vote as Vote)
   } catch (error) {
     console.error('Error creating vote:', error)
     throw new Error('Failed to create vote')

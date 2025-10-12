@@ -19,9 +19,9 @@ async function withChatEmbedding(chat: Chat): Promise<Chat> {
 }
 
 // CREATE CHAT
-export async function createChat(chat: Chat) {
+export async function createChat(chat: Omit<Chat, 'id'>) {
   try {
-    const chatWithVector = await withChatEmbedding(chat)
+    const chatWithVector = await withChatEmbedding(chat as Chat)
     invalidateCachesForChat()
     return await db.chats.add(chatWithVector)
   } catch (error) {

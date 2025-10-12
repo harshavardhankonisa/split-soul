@@ -19,9 +19,9 @@ async function withActionEmbedding(action: Action): Promise<Action> {
 }
 
 // CREATE ACTION
-export async function createAction(action: Action) {
+export async function createAction(action: Omit<Action, 'id'>) {
   try {
-    const actionWithVector = await withActionEmbedding(action)
+    const actionWithVector = await withActionEmbedding(action as Action)
     invalidateCachesForAction()
     return await db.actions.add(actionWithVector)
   } catch (error) {
