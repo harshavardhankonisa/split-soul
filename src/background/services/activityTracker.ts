@@ -46,8 +46,7 @@ class ActivityTracker {
     }
 
     const now = new Date()
-    const activity: Activity = {
-      id: 0,
+    const activity: Omit<Activity, 'id'> = {
       tabId,
       websiteTitle: tab.title || '',
       websiteUrl: tab.url!,
@@ -60,8 +59,8 @@ class ActivityTracker {
       updatedAt: now,
       vector: []
     }
-    activity.id = await createActivity(activity)
-    this.activeActivities.set(tabId, activity)
+    const id = await createActivity(activity)
+    this.activeActivities.set(tabId, { ...activity, id })
   }
 
   private async resumeOrCreateActivity(tabId: number, tab: chrome.tabs.Tab) {

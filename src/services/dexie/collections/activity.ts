@@ -19,9 +19,9 @@ async function withActivityEmbedding(activity: Activity): Promise<Activity> {
 }
 
 // CREATE ACTIVITY
-export async function createActivity(activity: Activity) {
+export async function createActivity(activity: Omit<Activity, 'id'>) {
   try {
-    const activityWithVector = await withActivityEmbedding(activity)
+    const activityWithVector = await withActivityEmbedding(activity as Activity)
     invalidateCachesForActivity()
     return await db.activities.add(activityWithVector)
   } catch (error) {
