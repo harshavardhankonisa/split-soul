@@ -6,10 +6,7 @@ export interface User {
   username: string
   description: string
   avatarUrl: string
-  createdAt: Date
-  modifiedAt: Date
   isActive: boolean
-  isEditable: boolean
   vector: number[]
 }
 
@@ -51,29 +48,14 @@ export interface Action {
 }
 
 // Task Fields
-export type TaskStatus = 'todo' | 'in-progress' | 'done'
-
 export interface Task {
   id: number
   title: string
   description: string
-  status: TaskStatus
+  status: 'todo' | 'in-progress' | 'done'
   priority: Priority
   dueDate: Date | null
   createdAt: Date
   modifiedAt: Date
   vector: number[]
-}
-
-// Vote Fields
-export interface Vote {
-  id: number
-  title: string
-  description: string
-  votes: {
-    user: User
-    vote: 'yes' | 'no' | 'abstain'
-  }[]
-  status: 'open' | 'closed'
-  createdAt: Date
 }

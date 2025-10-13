@@ -24,10 +24,7 @@ export class ChatAgent {
         username: 'Main Body',
         description: 'The primary user of the extension',
         avatarUrl: '',
-        createdAt: new Date(),
-        modifiedAt: new Date(),
         isActive: true,
-        isEditable: false,
         vector: []
       })
       this.mainBody = {
@@ -35,10 +32,7 @@ export class ChatAgent {
         username: 'Main Body',
         description: 'The primary user of the extension',
         avatarUrl: '',
-        createdAt: new Date(),
-        modifiedAt: new Date(),
         isActive: true,
-        isEditable: false,
         vector: []
       }
     }
@@ -50,10 +44,7 @@ export class ChatAgent {
         username: 'Main Soul',
         description: 'The primary agent that manages and observes activity patterns',
         avatarUrl: '',
-        createdAt: new Date(),
-        modifiedAt: new Date(),
         isActive: true,
-        isEditable: false,
         vector: []
       })
       this.mainSoul = {
@@ -61,16 +52,13 @@ export class ChatAgent {
         username: 'Main Soul',
         description: 'The primary agent that manages and observes activity patterns',
         avatarUrl: '',
-        createdAt: new Date(),
-        modifiedAt: new Date(),
         isActive: true,
-        isEditable: false,
         vector: []
       }
     }
 
     // Get split souls (editable users)
-    this.splitSouls = users.filter(u => u.isEditable && u.isActive)
+    this.splitSouls = users.filter(u => u.isActive)
   }
 
   private startChatTimer() {
@@ -177,7 +165,7 @@ export class ChatAgent {
 
   public async refreshSouls() {
     const users = await getAllUsers()
-    this.splitSouls = users.filter(u => u.isEditable && u.isActive)
+    this.splitSouls = users.filter(u => u.isActive)
   }
 
   public async getRecentChats(limit: number = 10): Promise<Chat[]> {

@@ -7,20 +7,14 @@ export const seedDefaultData = async () => {
       username: 'Main Body',
       description: 'The primary user of the extension',
       avatarUrl: '',
-      createdAt: new Date(),
-      modifiedAt: new Date(),
       isActive: true,
-      isEditable: false,
       vector: []
     },
     {
       username: 'Main Soul',
       description: 'The primary agent that manages and observes activity patterns',
       avatarUrl: '',
-      createdAt: new Date(),
-      modifiedAt: new Date(),
       isActive: true,
-      isEditable: false,
       vector: []
     }
   ]

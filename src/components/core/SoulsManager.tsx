@@ -1,156 +1,99 @@
-import React, { useEffect, useState } from 'react'
-import {
-  Box,
-  Typography,
-  Button,
-  MenuItem,
-  Select,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
-} from '@mui/material'
-import { getAllUsers, createUser, searchUsersByVector } from '../../services/dexie/collections/user'
+import { useCallback, useEffect, useState } from 'react'
+import { Box, Button, Paper, Stack, TextField } from '@mui/material'
+import { getAllUsers, createUser, updateUser } from '../../services/dexie/collections/user'
 import type { User } from '../../interface/database'
+import { SoulCard } from '../common/SoulCard'
+
+const addUserInitialState = {
+  username: '',
+  description: '',
+  avatarUrl: ''
+} as User
 
 export default function SoulsManager() {
   const [users, setUsers] = useState<User[]>([])
-  const [selectedUserId, setSelectedUserId] = useState<number | ''>('')
-  const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<Partial<User>>({})
-  const [searchResults, setSearchResults] = useState<User[]>([])
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [addModalState, setAddModalState] = useState<User>(addUserInitialState)
+
+  const handleSoulsMutation = useCallback(async (action: 'add' | 'edit', data?: User) => {
+    if (action === 'add') {
+      if (data)
+        await createUser({
+          username: data.username,
+          description: data.description ?? '',
+          avatarUrl: data.avatarUrl ?? '',
+          isActive: true,
+          vector: []
+        })
+      setShowAddModal(false)
+      setAddModalState(addUserInitialState)
+    }
+    if (action === 'edit') {
+      if (data) {
+        await updateUser(data.id, {
+          username: data.username,
+          description: data.description ?? '',
+          avatarUrl: data.avatarUrl ?? '',
+          isActive: data.isActive ?? true,
+          vector: data.vector ?? []
+        })
+      }
+    }
+
+    const updatedUsers = await getAllUsers()
+    setUsers(updatedUsers)
+  }, [])
 
   useEffect(() => {
     getAllUsers().then(setUsers)
-  }, [open])
-
-  const handleSelect = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setSelectedUserId(event.target.value as number)
-  }
-
-  const handleAddSoul = () => {
-    setForm({})
-    setOpen(true)
-  }
-
-  const handleEditSoul = () => {
-    const user = users.find(u => u.id === selectedUserId)
-    if (user) {
-      setForm(user)
-      setOpen(true)
-    }
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
-
-  const handleSave = async () => {
-    if (!form.username) return
-    const now = new Date()
-    await createUser({
-      username: form.username,
-      description: form.description ?? '',
-      avatarUrl: form.avatarUrl ?? '',
-      createdAt: form.createdAt ?? now,
-      modifiedAt: now,
-      isActive: true,
-      isEditable: true,
-      vector: []
-    })
-    setOpen(false)
-    getAllUsers().then(setUsers)
-  }
-
-  const handleSearch = async (query: string) => {
-    const results = await searchUsersByVector(query)
-    setSearchResults(results)
-  }
+  }, [])
 
   return (
     <Box>
-      <Typography variant='subtitle1' gutterBottom>
-        Select Soul
-      </Typography>
-      <Select fullWidth value={selectedUserId} onChange={() => handleSelect} displayEmpty>
-        <MenuItem value=''>Choose a Soul</MenuItem>
+      <Button variant='outlined' onClick={() => setShowAddModal(true)}>
+        + Add Soul
+      </Button>
+      {showAddModal && (
+        <Paper sx={{ p: 2, mt: 2 }}>
+          <Box display='flex' flexDirection='column' gap={2}>
+            <TextField
+              size='small'
+              label='Username'
+              variant='outlined'
+              value={addModalState.username}
+              onChange={e => setAddModalState({ ...addModalState, username: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              size='small'
+              label='Description'
+              variant='outlined'
+              value={addModalState.description}
+              onChange={e => setAddModalState({ ...addModalState, description: e.target.value })}
+              fullWidth
+              multiline
+              rows={2}
+            />
+            <Stack direction='row' spacing={1}>
+              <Button
+                variant='contained'
+                size='small'
+                color='primary'
+                onClick={() => handleSoulsMutation('add', addModalState)}
+              >
+                Add
+              </Button>
+              <Button variant='outlined' size='small' onClick={() => setShowAddModal(false)}>
+                Cancel
+              </Button>
+            </Stack>
+          </Box>
+        </Paper>
+      )}
+      <Box mt={2}>
         {users.map(user => (
-          <MenuItem key={user.id} value={user.id}>
-            {user.username}
-          </MenuItem>
+          <SoulCard user={user} handleSoulsMutation={handleSoulsMutation} />
         ))}
-      </Select>
-      <Box mt={2} display='flex' gap={2}>
-        <Button variant='outlined' onClick={handleAddSoul}>
-          + Add Soul
-        </Button>
-        <Button variant='contained' disabled={!selectedUserId} onClick={handleEditSoul}>
-          Edit Soul
-        </Button>
-      </Box>
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>{form.id ? 'Edit Soul' : 'Add Soul'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin='dense'
-            name='username'
-            label='Soul Name'
-            type='text'
-            fullWidth
-            value={form.username ?? ''}
-            onChange={handleChange}
-          />
-          <TextField
-            margin='dense'
-            name='description'
-            label='Description'
-            type='text'
-            fullWidth
-            value={form.description ?? ''}
-            onChange={handleChange}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant='contained'>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <Box mt={2}>
-        <TextField
-          fullWidth
-          multiline
-          rows={2}
-          placeholder='Search souls by vector similarity...'
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              handleSearch(form.username ?? '')
-            }
-          }}
-          value={form.username ?? ''}
-          onChange={handleChange}
-          name='username'
-        />
-        <Button variant='contained' color='primary' onClick={() => handleSearch(form.username ?? '')}>
-          Search
-        </Button>
-      </Box>
-      <Box mt={2}>
-        <Typography variant='h6'>Search Results</Typography>
-        {searchResults.length === 0 ? (
-          <Typography>No results found.</Typography>
-        ) : (
-          searchResults.map(user => (
-            <Box key={user.id} mb={1} p={1} border='1px solid #ccc' borderRadius='4px'>
-              <Typography variant='subtitle1'>{user.username}</Typography>
-              <Typography variant='body2'>{user.description}</Typography>
-            </Box>
-          ))
-        )}
       </Box>
     </Box>
   )
