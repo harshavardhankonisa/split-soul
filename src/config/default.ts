@@ -1,6 +1,18 @@
-export const defaultSoul = {
-  name: 'Main Soul',
-  description: 'The main soul of the user',
-  image: 'https://via.placeholder.com/150',
-  color: '#000000'
-}
+import type { User } from '../interface/database'
+
+export const defaultUsers: Omit<User, 'id'>[] = [
+  {
+    username: 'Main Body',
+    description: 'The primary user of the extension',
+    avatarUrl: '',
+    isActive: true,
+    vector: []
+  },
+  {
+    username: 'Main Soul',
+    description: 'The primary agent that manages and observes activity patterns',
+    avatarUrl: '',
+    isActive: true,
+    vector: []
+  }
+]

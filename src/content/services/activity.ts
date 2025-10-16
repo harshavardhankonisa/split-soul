@@ -5,7 +5,7 @@ declare global {
 }
 
 class UserActivityDetector {
-  private userActivityEvents: (keyof DocumentEventMap)[] = [
+  private documentUserEvents: (keyof DocumentEventMap)[] = [
     'mousedown',
     'mouseup',
     'click',
@@ -30,7 +30,17 @@ class UserActivityDetector {
     'copy',
     'cut',
     'focusin',
-    'focusout'
+    'focusout',
+    'visibilitychange'
+  ]
+  private windowUserEvents: (keyof WindowEventMap)[] = [
+    'focus',
+    'blur',
+    'resize',
+    'pageshow',
+    'pagehide',
+    'hashchange',
+    'popstate'
   ]
   private activityThrottle: number = 1000
   private lastUpdateSent: number = 0
@@ -41,8 +51,11 @@ class UserActivityDetector {
   }
 
   private setupActivityListeners() {
-    this.userActivityEvents.forEach(event => {
+    this.documentUserEvents.forEach(event => {
       document.addEventListener(event, this.notifyBackgroundOfActivity.bind(this), { passive: true })
+    })
+    this.windowUserEvents.forEach(event => {
+      window.addEventListener(event, this.notifyBackgroundOfActivity.bind(this), { passive: true })
     })
   }
 
