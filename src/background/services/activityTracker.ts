@@ -1,6 +1,6 @@
 import type { Activity } from '../../interface/database'
 import { ActivityUtils } from '../../utils/activity'
-import { createActivity, updateActivity, getAllActivitys } from '../../services/dexie/collections/activity'
+import { createActivity, updateActivity } from '../../services/dexie/collections/activity'
 
 class ActivityTracker {
   private activeActivities: Map<number, Activity> = new Map()
@@ -10,7 +10,6 @@ class ActivityTracker {
   constructor() {
     this.setupTabListeners()
     this.setupActivityTimers()
-    this.restoreActiveActivities()
   }
 
   private async handleTabActivated(tabId: number) {
@@ -136,23 +135,6 @@ class ActivityTracker {
     }
   }
 
-  private async restoreActiveActivities() {
-    const allActivities = await getAllActivitys()
-    const activeActivities = allActivities.filter(activity => activity.isActive && activity.endTime.getTime() === 0)
-    for (const activity of activeActivities) {
-      try {
-        await chrome.tabs.get(activity.tabId)
-        this.activeActivities.set(activity.tabId, activity)
-      } catch {
-        await updateActivity(activity.id, {
-          endTime: new Date(),
-          isActive: false,
-          updatedAt: new Date()
-        })
-      }
-    }
-  }
-
   private setupTabListeners() {
     chrome.tabs.onActivated.addListener(async activeInfo => {
       await this.handleTabActivated(activeInfo.tabId)
@@ -195,10 +177,6 @@ class ActivityTracker {
 
     chrome.tabs.onReplaced.addListener(async removedTabId => {
       await this.endActivity(removedTabId)
-    })
-
-    chrome.runtime.onStartup.addListener(async () => {
-      await this.restoreActiveActivities()
     })
   }
 

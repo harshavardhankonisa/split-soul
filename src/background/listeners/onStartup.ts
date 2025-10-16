@@ -1,5 +1,7 @@
+import { db } from '../../services/dexie/client'
+
 export const setupOnStartup = () => {
   chrome.runtime.onStartup.addListener(() => {
-    console.log('Browser restarted')
+    db.open()
   })
 }
