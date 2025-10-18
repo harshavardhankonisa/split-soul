@@ -66,13 +66,11 @@ class ActivityTracker {
     const existingActivity = this.activeActivities.get(tabId)
     if (existingActivity) {
       existingActivity.isActive = true
-      existingActivity.lastActivityTime = new Date()
-      existingActivity.updatedAt = new Date()
-      await updateActivity(existingActivity.id, {
-        isActive: true,
-        lastActivityTime: existingActivity.lastActivityTime,
-        updatedAt: existingActivity.updatedAt
-      })
+      const now = new Date()
+      existingActivity.lastActivityTime = now
+      existingActivity.updatedAt = now
+      existingActivity.websiteUrl = tab.url || existingActivity.websiteUrl
+      existingActivity.websiteTitle = tab.title || existingActivity.websiteTitle
     } else {
       await this.createNewActivity(tabId, tab)
     }
@@ -99,7 +97,7 @@ class ActivityTracker {
       const now = Date.now()
       for (const activity of this.activeActivities.values()) {
         const timeSinceLastActivity = now - activity.lastActivityTime.getTime()
-        if (timeSinceLastActivity >= this.IDLE_TIMEOUT) {
+        if (timeSinceLastActivity >= this.IDLE_TIMEOUT && activity.isActive) {
           activity.isActive = false
           activity.updatedAt = new Date()
           await updateActivity(activity.id, {
@@ -110,27 +108,21 @@ class ActivityTracker {
         } else if (activity.isActive) {
           activity.activeDuration += this.ACTIVITY_CHECK_INTERVAL
           activity.updatedAt = new Date()
-          await updateActivity(activity.id, {
-            activeDuration: activity.activeDuration,
-            updatedAt: activity.updatedAt
-          })
         }
       }
     }, this.ACTIVITY_CHECK_INTERVAL)
   }
 
   private async pauseAllActivities() {
-    for (const [tabId, activity] of this.activeActivities) {
+    for (const activity of this.activeActivities.values()) {
       if (activity.isActive) {
-        if ((await chrome.tabs.get(tabId)).audible === false) {
-          activity.isActive = false
-          activity.updatedAt = new Date()
-          await updateActivity(activity.id, {
-            isActive: false,
-            updatedAt: activity.updatedAt,
-            activeDuration: activity.activeDuration
-          })
-        }
+        activity.isActive = false
+        activity.updatedAt = new Date()
+        await updateActivity(activity.id, {
+          isActive: false,
+          updatedAt: activity.updatedAt,
+          activeDuration: activity.activeDuration
+        })
       }
     }
   }
@@ -141,7 +133,7 @@ class ActivityTracker {
     })
 
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-      if (changeInfo.status === 'complete') {
+      if (changeInfo.status === 'complete' || typeof changeInfo.url === 'string') {
         await this.handleTabUpdated(tabId, tab)
       }
     })
@@ -178,26 +170,25 @@ class ActivityTracker {
     chrome.tabs.onReplaced.addListener(async removedTabId => {
       await this.endActivity(removedTabId)
     })
+
+    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
+      if (changeInfo.discarded === true) {
+        await this.endActivity(tabId)
+      }
+    })
   }
 
   public handleUserActivity(sender: chrome.runtime.MessageSender) {
-    const tabId = sender.tab!.id!
+    const tabId = sender.tab?.id
+    if (tabId == null) return
     const activity = this.activeActivities.get(tabId)
-
     if (activity) {
       const now = new Date()
       activity.lastActivityTime = now
-      activity.websiteUrl = sender.tab?.url || ''
-      activity.websiteTitle = sender.tab?.title || ''
+      activity.websiteUrl = sender.tab?.url || activity.websiteUrl
+      activity.websiteTitle = sender.tab?.title || activity.websiteTitle
       activity.updatedAt = now
       activity.isActive = true
-      updateActivity(activity.id, {
-        isActive: true,
-        lastActivityTime: now,
-        updatedAt: now,
-        websiteUrl: sender.tab?.url || '',
-        websiteTitle: sender.tab?.title || ''
-      })
     }
   }
 
