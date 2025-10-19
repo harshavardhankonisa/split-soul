@@ -31,12 +31,26 @@ export async function createChat(chat: Omit<Chat, 'id' | 'createdAt' | 'vector'>
 }
 
 // GET ALL CHATS
-export async function getAllChats() {
+export async function getAllChats(options?: { sortByTime?: boolean; limit?: number }) {
   const cached = cacheGet(allChatsCache, 'all')
-  if (cached) return cached
+  const shouldUseCache = cached && !options?.sortByTime && !options?.limit
+  if (shouldUseCache) return cached
   try {
-    const chats = await db.chats.toArray()
-    cacheSet(allChatsCache, 'all', chats)
+    let chats: Chat[]
+    const sortByTime = options?.sortByTime ?? false
+    const limit = options?.limit && options.limit > 0 ? options.limit : undefined
+    if (sortByTime) {
+      let query = db.chats.orderBy('createdAt').reverse()
+      if (limit) query = query.limit(limit)
+      chats = await query.toArray()
+    } else if (limit) {
+      chats = await db.chats.toCollection().limit(limit).toArray()
+    } else {
+      chats = await db.chats.toArray()
+    }
+    if (!options?.sortByTime && !options?.limit) {
+      cacheSet(allChatsCache, 'all', chats)
+    }
     return chats
   } catch (error) {
     console.error('Error fetching all chats:', error)

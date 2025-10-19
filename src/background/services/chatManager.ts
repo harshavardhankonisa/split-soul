@@ -1,14 +1,18 @@
-import type { Chat } from '../../interface/database'
+import type { Chat, User } from '../../interface/database'
 import { createChat, getAllChats } from '../../services/dexie/collections/chat'
 import { getAllUsers } from '../../services/dexie/collections/user'
 
 export class ChatManager {
+  private async soulsOpinions(soul: User, message: string) {
+    console.log(soul, message)
+  }
+
   private async triggerMultiSoulOpinions(message: string) {
     const customSouls = (await getAllUsers()).filter(
       u => u.username !== 'Main Soul' && u.username !== 'Main Body' && u.isActive
     )
     for (const soul of customSouls) {
-      console.log(soul, message)
+      this.soulsOpinions(soul, message)
     }
   }
 
