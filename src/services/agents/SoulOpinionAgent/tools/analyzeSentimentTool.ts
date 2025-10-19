@@ -1,4 +1,5 @@
 import { DynamicTool } from '@langchain/core/tools'
+import { PromptAPI } from '../../../API/prompt'
 
 export const analyzeSentimentTool = new DynamicTool({
   name: 'analyze_sentiment',
@@ -11,10 +12,8 @@ export const analyzeSentimentTool = new DynamicTool({
     if (lower.includes('ok') || lower.includes('fine')) return 'Sentiment: Neutral 😐'
 
     // If no keywords, ask LLM
-    // @ts-expect-error Chrome LanguageModel API
-    const session = await window.LanguageModel.create()
-    const res = await session.prompt(`Analyze sentiment of this message: "${input}"`)
-    session.destroy()
+    const res = await PromptAPI.prompt(`Analyze sentiment of this message: "${input}"`)
+    console.log('analyzeSentimentTool:')
     return res
   }
 })

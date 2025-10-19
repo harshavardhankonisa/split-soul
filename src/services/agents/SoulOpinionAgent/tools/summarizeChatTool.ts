@@ -1,5 +1,6 @@
 import { DynamicTool } from '@langchain/core/tools'
 import { getAllChats } from '../../../dexie/collections/chat'
+import { PromptAPI } from '../../../API/prompt'
 
 export const summarizeChatTool = new DynamicTool({
   name: 'summarize_chats',
@@ -8,11 +9,8 @@ export const summarizeChatTool = new DynamicTool({
     const chats = await getAllChats({ sortByTime: true, limit: 5 })
     const combined = chats.map(c => `${c.user}: ${c.message}`).join('\n')
 
-    // @ts-expect-error Chrome LanguageModel API
-    const session = await window.LanguageModel.create()
-    const res = await session.prompt(`Summarize the following messages:\n${combined}\nFocus: ${input}`)
-    session.destroy()
-
+    const res = await PromptAPI.prompt(`Summarize the following messages:\n${combined}\nFocus: ${input}`)
+    console.log('summarizeChatTool:')
     return res
   }
 })
