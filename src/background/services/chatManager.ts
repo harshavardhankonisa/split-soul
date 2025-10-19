@@ -4,41 +4,37 @@ import { activityTracker } from './activityTracker'
 export class ChatAgent {
   private currentActivities: Activity[] = []
   private lastActiveTime = Date.now()
-  private chatTimer: NodeJS.Timeout | null = null
-  private readonly USER_ACTIVE_INTERVAL = 1 * 60 * 1000
-  private readonly USER_INACTIVE_INTERVAL = 2 * 60 * 1000
-  private readonly CHAT_INTERVAL = 5 * 60 * 1000
-  private activeLogInterval: NodeJS.Timeout | null = null
+  private hasLoggedActive = false
+  private hasLoggedInactive = false
+  private readonly ACTIVE_THRESHOLD = 5 * 60 * 1000
+  private readonly INACTIVE_THRESHOLD = 10 * 60 * 1000
+  private readonly ACTIVTY_CHECK_THRESHOLD = 60 * 1000
 
   constructor() {
     this.startChatTimer()
   }
 
   private startChatTimer() {
-    this.chatTimer = setInterval(() => this.checkActivity(), 60 * 1000)
+    setInterval(() => this.checkActivity(), this.ACTIVTY_CHECK_THRESHOLD)
   }
 
-  public recieveActivityHeartBeat() {
+  public receiveActivityHeartBeat() {
     this.currentActivities = activityTracker.getCurrentActivities()
     this.lastActiveTime = Date.now()
+    if (this.hasLoggedInactive) {
+      this.hasLoggedActive = false
+      this.hasLoggedInactive = false
+    }
   }
 
   private checkActivity() {
-    const now = Date.now()
-    const activeDuration = now - this.lastActiveTime
+    const inactiveDuration = Date.now() - this.lastActiveTime
 
-    if (activeDuration <= this.USER_ACTIVE_INTERVAL) {
-      if (!this.activeLogInterval) {
-        this.activeLogInterval = setInterval(() => {
-          console.log('User has been active for 5 minutes continuously.', this.currentActivities)
-        }, this.CHAT_INTERVAL)
-      }
-    } else if (activeDuration > this.USER_INACTIVE_INTERVAL) {
-      if (this.activeLogInterval) {
-        clearInterval(this.activeLogInterval)
-        this.activeLogInterval = null
-        console.log('User inactive for more than 10 minutes. Logging stopped.', this.chatTimer)
-      }
+    if (!this.hasLoggedActive && inactiveDuration <= this.ACTIVE_THRESHOLD) {
+      console.log(this.currentActivities)
+      this.hasLoggedActive = true
+    } else if (!this.hasLoggedInactive && inactiveDuration > this.INACTIVE_THRESHOLD) {
+      this.hasLoggedInactive = true
     }
   }
 }

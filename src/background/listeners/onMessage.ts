@@ -5,7 +5,7 @@ export const setupOnMessage = () => {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'ACTIVITY_TRACKER') {
       activityTracker.handleUserActivity(sender)
-      chatAgent.recieveActivityHeartBeat()
+      chatAgent.receiveActivityHeartBeat()
     }
 
     if (message.type === 'GET_CURRENT_TAB_INFO') {
