@@ -96,6 +96,13 @@ class ActivityTracker {
     setInterval(async () => {
       const now = Date.now()
       for (const activity of this.activeActivities.values()) {
+        const tab = await chrome.tabs.get(activity.tabId)
+        if (tab.audible) {
+          activity.isActive = true
+          activity.lastActivityTime = new Date()
+          activity.updatedAt = new Date()
+          activity.activeDuration += this.ACTIVITY_CHECK_INTERVAL
+        }
         const timeSinceLastActivity = now - activity.lastActivityTime.getTime()
         if (timeSinceLastActivity >= this.IDLE_TIMEOUT && activity.isActive) {
           activity.isActive = false

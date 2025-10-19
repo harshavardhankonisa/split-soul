@@ -1,126 +1,44 @@
-import type { User, Activity, Chat } from '../../interface/database'
-import { createChat, getAllChats } from '../../services/dexie/collections/chat'
-import { getAllActivitys } from '../../services/dexie/collections/activity'
+import type { Activity } from '../../interface/database'
+import { activityTracker } from './activityTracker'
 
 export class ChatAgent {
+  private currentActivities: Activity[] = []
+  private lastActiveTime = Date.now()
   private chatTimer: NodeJS.Timeout | null = null
+  private readonly USER_ACTIVE_INTERVAL = 1 * 60 * 1000
+  private readonly USER_INACTIVE_INTERVAL = 2 * 60 * 1000
   private readonly CHAT_INTERVAL = 5 * 60 * 1000
+  private activeLogInterval: NodeJS.Timeout | null = null
 
   constructor() {
     this.startChatTimer()
   }
 
   private startChatTimer() {
-    this.chatTimer = setInterval(async () => {
-      await this.checkActivityAndChat()
-    }, this.CHAT_INTERVAL)
-
-    // Also check immediately after a short delay
-    setTimeout(() => this.checkActivityAndChat(), 10000)
+    this.chatTimer = setInterval(() => this.checkActivity(), 60 * 1000)
   }
 
-  private async checkActivityAndChat() {
-    if (!this.mainSoul) return
+  public recieveActivityHeartBeat() {
+    this.currentActivities = activityTracker.getCurrentActivities()
+    this.lastActiveTime = Date.now()
+  }
 
-    const now = new Date()
-    const fiveMinutesAgo = new Date(now.getTime() - this.CHAT_INTERVAL)
+  private checkActivity() {
+    const now = Date.now()
+    const activeDuration = now - this.lastActiveTime
 
-    // Get recent activities
-    const activities = await this.getRecentActivities(fiveMinutesAgo, now)
-
-    if (activities.length === 0) {
-      // No activity - Main Soul comments on inactivity
-      await this.postMainSoulMessage("I notice you've been inactive for the last 5 minutes. Time to get back to work!")
-      return
-    }
-
-    // Analyze activity and generate Main Soul message
-    const activitySummary = this.analyzeActivity(activities)
-    const mainSoulMessage = await this.generateMainSoulMessage(activitySummary)
-    await this.postMainSoulMessage(mainSoulMessage)
-
-    // Occasionally get split soul responses (not every time)
-    if (Math.random() < 0.3 && this.splitSouls.length > 0) {
-      // 30% chance
-      const respondingSoul = this.splitSouls[Math.floor(Math.random() * this.splitSouls.length)]
-      const splitSoulMessage = await this.generateSplitSoulResponse(respondingSoul, activitySummary)
-      if (splitSoulMessage) {
-        await this.postSplitSoulMessage(respondingSoul, splitSoulMessage)
+    if (activeDuration <= this.USER_ACTIVE_INTERVAL) {
+      if (!this.activeLogInterval) {
+        this.activeLogInterval = setInterval(() => {
+          console.log('User has been active for 5 minutes continuously.', this.currentActivities)
+        }, this.CHAT_INTERVAL)
       }
-    }
-
-    // this.lastActivityCheck = now
-  }
-
-  private async getRecentActivities(startTime: Date, endTime: Date): Promise<Activity[]> {
-    const allActivities = await getAllActivitys()
-    return allActivities.filter(activity => {
-      const activityTime = new Date(activity.updatedAt)
-      return activityTime >= startTime && activityTime <= endTime && activity.activeDuration > 0
-    })
-  }
-
-  private analyzeActivity(activities: Activity[]): string {
-    const totalDuration = activities.reduce((sum, a) => sum + a.activeDuration, 0)
-    const minutes = Math.round(totalDuration / 1000 / 60)
-    const websites = [...new Set(activities.map(a => a.websiteTitle))].slice(0, 3)
-
-    return `${minutes} minutes active on: ${websites.join(', ')}`
-  }
-
-  private async generateMainSoulMessage(activitySummary: string): Promise<string> {
-    const messages = [
-      `I see you spent ${activitySummary}. Keep up the focus!`,
-      `Activity update: ${activitySummary}. How's your productivity feeling?`,
-      `Tracking your progress: ${activitySummary}. Stay on track!`,
-      `Latest activity: ${activitySummary}. Remember your goals!`,
-      `I've been watching: ${activitySummary}. Good momentum!`
-    ]
-
-    return messages[Math.floor(Math.random() * messages.length)]
-  }
-
-  private async generateSplitSoulResponse(soul: User, activitySummary: string): Promise<string | null> {
-    const responses = [
-      `${soul.username}: Interesting pattern in ${activitySummary}`,
-      `${soul.username}: I have thoughts about ${activitySummary}`,
-      `${soul.username}: That activity reminds me of something...`,
-      null,
-      null
-    ]
-
-    return responses[Math.floor(Math.random() * responses.length)]
-  }
-
-  private async postMainSoulMessage(message: string) {
-    if (!this.mainSoul) return
-
-    await createChat({
-      user: this.mainSoul,
-      message,
-      createdAt: new Date(),
-      vector: []
-    })
-  }
-
-  private async postSplitSoulMessage(soul: User, message: string) {
-    await createChat({
-      user: soul,
-      message,
-      createdAt: new Date(),
-      vector: []
-    })
-  }
-
-  public async getRecentChats(limit: number = 10): Promise<Chat[]> {
-    const chats = await getAllChats()
-    return chats.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, limit)
-  }
-
-  public stopChatTimer() {
-    if (this.chatTimer) {
-      clearInterval(this.chatTimer)
-      this.chatTimer = null
+    } else if (activeDuration > this.USER_INACTIVE_INTERVAL) {
+      if (this.activeLogInterval) {
+        clearInterval(this.activeLogInterval)
+        this.activeLogInterval = null
+        console.log('User inactive for more than 10 minutes. Logging stopped.', this.chatTimer)
+      }
     }
   }
 }
