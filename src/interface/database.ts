@@ -2,8 +2,8 @@ import type { Priority } from './common'
 
 // Souls + (Main Soul, Main Body)(default)
 export interface User {
-  id: number
-  username: string
+  id: number // unique
+  username: string // unique
   description: string
   avatarUrl: string
   isActive: boolean
@@ -29,7 +29,7 @@ export interface Activity {
 // Chat Fields
 export interface Chat {
   id: number
-  user: User
+  user: string // user name
   message: string
   createdAt: Date
   vector: number[]

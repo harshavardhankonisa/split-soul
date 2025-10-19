@@ -19,24 +19,14 @@ async function withChatEmbedding(chat: Chat): Promise<Chat> {
 }
 
 // CREATE CHAT
-export async function createChat(chat: Omit<Chat, 'id'>) {
+export async function createChat(chat: Omit<Chat, 'id' | 'createdAt' | 'vector'>) {
   try {
-    const chatWithVector = await withChatEmbedding(chat as Chat)
+    const chatWithVector = await withChatEmbedding({ ...chat, createdAt: Date.now() } as unknown as Chat)
     invalidateCachesForChat()
     return await db.chats.add(chatWithVector)
   } catch (error) {
     console.error('Error creating chat:', error)
     throw new Error('Failed to create chat')
-  }
-}
-
-// READ CHAT BY ID
-export async function getChat(id: number) {
-  try {
-    return await db.chats.get(id)
-  } catch (error) {
-    console.error(`Error fetching chat with ID ${id}:`, error)
-    throw new Error('Failed to fetch chat')
   }
 }
 

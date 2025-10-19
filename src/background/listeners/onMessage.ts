@@ -1,11 +1,11 @@
 import { activityTracker } from '../services/activityTracker'
-import { chatAgent } from '../services/chatManager'
+import { mainSoulAgent } from '../services/mainSoulAgent'
 
 export const setupOnMessage = () => {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'ACTIVITY_TRACKER') {
       activityTracker.handleUserActivity(sender)
-      chatAgent.receiveActivityHeartBeat()
+      mainSoulAgent.receiveActivityHeartBeat()
     }
 
     if (message.type === 'GET_CURRENT_TAB_INFO') {
