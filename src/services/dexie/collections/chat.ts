@@ -30,21 +30,6 @@ export async function createChat(chat: Omit<Chat, 'id'>) {
   }
 }
 
-// UPDATE CHAT BY ID
-export async function updateChat(id: number, changes: Partial<Chat>) {
-  try {
-    const existing = await db.chats.get(id)
-    if (!existing) return null
-    const updated = { ...existing, ...changes }
-    const updatedWithVector = await withChatEmbedding(updated as Chat)
-    invalidateCachesForChat()
-    return await db.chats.put(updatedWithVector)
-  } catch (error) {
-    console.error(`Error updating chat with ID ${id}:`, error)
-    throw new Error('Failed to update chat')
-  }
-}
-
 // READ CHAT BY ID
 export async function getChat(id: number) {
   try {
@@ -52,17 +37,6 @@ export async function getChat(id: number) {
   } catch (error) {
     console.error(`Error fetching chat with ID ${id}:`, error)
     throw new Error('Failed to fetch chat')
-  }
-}
-
-// DELETE CHAT BY ID
-export async function deleteChat(id: number) {
-  try {
-    invalidateCachesForChat()
-    return await db.chats.delete(id)
-  } catch (error) {
-    console.error(`Error deleting chat with ID ${id}:`, error)
-    throw new Error('Failed to delete chat')
   }
 }
 

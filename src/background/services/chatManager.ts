@@ -1,64 +1,13 @@
 import type { User, Activity, Chat } from '../../interface/database'
-import { getAllUsers, createUser } from '../../services/dexie/collections/user'
 import { createChat, getAllChats } from '../../services/dexie/collections/chat'
 import { getAllActivitys } from '../../services/dexie/collections/activity'
 
 export class ChatAgent {
-  private mainBody: User | null = null
-  private mainSoul: User | null = null
-  private splitSouls: User[] = []
   private chatTimer: NodeJS.Timeout | null = null
   private readonly CHAT_INTERVAL = 5 * 60 * 1000
 
   constructor() {
-    this.initializeDefaultUsers()
     this.startChatTimer()
-  }
-
-  private async initializeDefaultUsers() {
-    const users = await getAllUsers()
-
-    this.mainBody = users.find(u => u.username === 'Main Body') || null
-    if (!this.mainBody) {
-      const mainBodyId = await createUser({
-        username: 'Main Body',
-        description: 'The primary user of the extension',
-        avatarUrl: '',
-        isActive: true,
-        vector: []
-      })
-      this.mainBody = {
-        id: mainBodyId,
-        username: 'Main Body',
-        description: 'The primary user of the extension',
-        avatarUrl: '',
-        isActive: true,
-        vector: []
-      }
-    }
-
-    // Find or create Main Soul
-    this.mainSoul = users.find(u => u.username === 'Main Soul') || null
-    if (!this.mainSoul) {
-      const mainSoulId = await createUser({
-        username: 'Main Soul',
-        description: 'The primary agent that manages and observes activity patterns',
-        avatarUrl: '',
-        isActive: true,
-        vector: []
-      })
-      this.mainSoul = {
-        id: mainSoulId,
-        username: 'Main Soul',
-        description: 'The primary agent that manages and observes activity patterns',
-        avatarUrl: '',
-        isActive: true,
-        vector: []
-      }
-    }
-
-    // Get split souls (editable users)
-    this.splitSouls = users.filter(u => u.isActive)
   }
 
   private startChatTimer() {
@@ -163,11 +112,6 @@ export class ChatAgent {
     })
   }
 
-  public async refreshSouls() {
-    const users = await getAllUsers()
-    this.splitSouls = users.filter(u => u.isActive)
-  }
-
   public async getRecentChats(limit: number = 10): Promise<Chat[]> {
     const chats = await getAllChats()
     return chats.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, limit)
@@ -178,18 +122,6 @@ export class ChatAgent {
       clearInterval(this.chatTimer)
       this.chatTimer = null
     }
-  }
-
-  public getMainSoul(): User | null {
-    return this.mainSoul
-  }
-
-  public getMainBody(): User | null {
-    return this.mainBody
-  }
-
-  public getSplitSouls(): User[] {
-    return this.splitSouls
   }
 }
 
