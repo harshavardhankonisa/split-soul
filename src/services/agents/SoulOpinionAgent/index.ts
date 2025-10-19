@@ -1,10 +1,7 @@
 import { LLM } from '@langchain/core/language_models/llms'
 import { PromptAPI } from '../../API/prompt'
-import { soulOpinionTools } from './tools'
 
 export class SoulOpinionAgent extends LLM {
-  tools = soulOpinionTools
-
   _llmType() {
     return 'chrome-prompt'
   }

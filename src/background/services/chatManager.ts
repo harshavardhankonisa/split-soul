@@ -1,10 +1,43 @@
 import type { Chat, User } from '../../interface/database'
+import { SoulOpinionAgent } from '../../services/agents/SoulOpinionAgent'
 import { createChat, getAllChats } from '../../services/dexie/collections/chat'
 import { getAllUsers } from '../../services/dexie/collections/user'
 
 export class ChatManager {
-  private async soulsOpinions(soul: User, message: string) {
-    console.log(soul, message)
+  private soulOpinionAgent = new SoulOpinionAgent({})
+
+  private async getSoulOpinion(soul: User, message: string): Promise<string | null> {
+    const relevancePrompt = `
+      Soul: "${soul.username}"
+      Soul Description: "${soul.description}"
+      Message: "${message}"
+          
+      Is this message relevant to this soul's expertise/role? Answer with ONLY "YES" or "NO".
+      Response:`
+
+    const relevanceCheck = await this.soulOpinionAgent._call(relevancePrompt)
+
+    if (!relevanceCheck.includes('YES')) {
+      console.log(`Message not relevant to ${soul.username}`)
+      return null
+    }
+
+    const opinionPrompt = `
+      You are ${soul.username}. Your role: ${soul.description}
+          
+      Message to respond to: "${message}"
+          
+      Provide a brief, relevant opinion or response based on your role. Keep it concise (1-2 sentences).
+      Response:`
+
+    const opinion = await this.soulOpinionAgent._call(opinionPrompt)
+
+    await createChat({
+      user: soul.username,
+      message: opinion
+    })
+
+    return opinion
   }
 
   private async triggerMultiSoulOpinions(message: string) {
@@ -12,7 +45,7 @@ export class ChatManager {
       u => u.username !== 'Main Soul' && u.username !== 'Main Body' && u.isActive
     )
     for (const soul of customSouls) {
-      this.soulsOpinions(soul, message)
+      this.getSoulOpinion(soul, message)
     }
   }
 
