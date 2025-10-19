@@ -46,16 +46,3 @@ export interface Action {
   isCompleted: boolean
   vector: number[]
 }
-
-// Task Fields
-export interface Task {
-  id: number
-  title: string
-  description: string
-  status: 'todo' | 'in-progress' | 'done'
-  priority: Priority
-  dueDate: Date | null
-  createdAt: Date
-  modifiedAt: Date
-  vector: number[]
-}

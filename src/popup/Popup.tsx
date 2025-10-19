@@ -11,7 +11,6 @@ import type { Tab } from '../interface/ui'
 import HomeIcon from '@mui/icons-material/Home'
 import CallToActionIcon from '@mui/icons-material/CallToAction'
 import ChatIcon from '@mui/icons-material/Chat'
-import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted'
 import PeopleIcon from '@mui/icons-material/People'
 import SettingsIcon from '@mui/icons-material/Settings'
 
@@ -34,12 +33,6 @@ export default function Popup() {
       description: 'Talk with your split souls as main soul.',
       component: <ChatManager />,
       icon: <ChatIcon />
-    },
-    {
-      label: 'Task Manager',
-      description: 'Manage your tasks and to-dos.',
-      component: null,
-      icon: <FormatListBulletedIcon />
     },
     {
       label: 'Manage Souls',

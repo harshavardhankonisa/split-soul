@@ -1,12 +1,11 @@
 import Dexie from 'dexie'
-import type { User, Activity, Chat, Action, Task } from '../../interface/database'
+import type { User, Activity, Chat, Action } from '../../interface/database'
 
 export class SplitSoulDB extends Dexie {
   users!: Dexie.Table<User, number>
   activities!: Dexie.Table<Activity, number>
   chats!: Dexie.Table<Chat, number>
   actions!: Dexie.Table<Action, number>
-  tasks!: Dexie.Table<Task, number>
 
   constructor() {
     super('split_soul_db')
@@ -15,8 +14,7 @@ export class SplitSoulDB extends Dexie {
       activities:
         '++id, tabId, websiteTitle, websiteUrl, isActive, startTime, endTime, lastActivityTime, activeDuration, createdAt, updatedAt, vector',
       chats: '++id, &user, createdAt, vector',
-      actions: '++id, createdAt, createdBy, vector',
-      tasks: '++id, createdAt, modifiedAt, status, vector'
+      actions: '++id, createdAt, createdBy, vector'
     })
   }
 }

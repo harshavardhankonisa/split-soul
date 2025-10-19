@@ -9,3 +9,9 @@ export interface Vote {
   status: 'open' | 'closed'
   createdAt: Date
 }
+
+export interface Agenda {
+  id: number
+  title: string
+  description: string
+}
