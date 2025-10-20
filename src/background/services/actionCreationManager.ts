@@ -79,39 +79,28 @@ export class ActionCreationManager {
 
   public async processActionFlow(message: string, notifySuggestion: (username: string, msg: string) => Promise<void>) {
     const souls = await this.getActiveSplitSouls()
-
     const suggestionsPerSoul = await Promise.all(souls.map(s => this.getActionSuggestionsForSoul(s, message)))
-
     for (let i = 0; i < souls.length; i++) {
       const list = suggestionsPerSoul[i]
       if (list && list.length > 0) {
         await notifySuggestion(souls[i].username, `Suggestions: ${list.join(' | ')}`)
       }
     }
-
-    // Flatten + uniq suggestions
     const suggestions = Array.from(new Set(suggestionsPerSoul.flat()))
     if (suggestions.length === 0) return
-
-    // 3) Vote
     const voted = await this.voteOnActions(souls, suggestions)
-
-    // 4) Dedup by similarity then upsert
     const existing = await getAllActions()
     for (const v of voted) {
       if (v.votes <= 0) continue
-
       const similarExisting = await this.findSimilarExisting(v.description, existing)
       if (similarExisting) {
-        // Update priority to reflect renewed interest; don't create a new one
         await updateAction(similarExisting.id, { priority: 'high' })
         continue
       }
-
       await createAction({
         description: v.description,
         createdAt: new Date(),
-        priority: 'high',
+        priority: 'low',
         isCompleted: false,
         vector: []
       })

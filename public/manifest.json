@@ -20,7 +20,6 @@
       "32": "icons/icon48.png"
     }
   },
-  "options_page": "src/options/index.html",
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -32,7 +31,16 @@
     }
   ],
   "host_permissions": ["<all_urls>"],
-  "permissions": ["activeTab", "storage", "scripting", "tabs", "notifications", "history", "webNavigation"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "tabs",
+    "notifications",
+    "history",
+    "webNavigation",
+    "offscreen"
+  ],
   "optional_permissions": ["clipboardRead", "clipboardWrite"],
   "commands": {
     "_execute_action": {

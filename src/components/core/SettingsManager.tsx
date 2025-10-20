@@ -1,4 +1,4 @@
-import { Box, Typography, TextField, Button, Link, Divider } from '@mui/material'
+import { Box, Typography, TextField, Button } from '@mui/material'
 
 export default function SettingsManager() {
   return (
@@ -10,29 +10,6 @@ export default function SettingsManager() {
       <Button variant='contained' sx={{ mb: 2 }}>
         Save
       </Button>
-
-      <Divider sx={{ my: 2 }} />
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Typography variant='body2' color='text.secondary'>
-          Need more preferences?
-        </Typography>
-        <Link
-          href='#'
-          onClick={() => {
-            chrome.runtime.openOptionsPage()
-          }}
-          sx={{
-            cursor: 'pointer',
-            textDecoration: 'none',
-            '&:hover': {
-              textDecoration: 'underline'
-            }
-          }}
-        >
-          Open Extension Settings
-        </Link>
-      </Box>
     </Box>
   )
 }

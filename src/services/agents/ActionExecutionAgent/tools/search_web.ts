@@ -21,8 +21,8 @@ export const searchWebTool: Tool = {
     try {
       const created = await chrome.tabs.create({ url, active: true })
       return `Opened search tab #${created.id} (${e}) for: ${q}`
-    } catch (err: any) {
-      return `Failed to open search tab. Ensure "tabs" permission is granted. Error: ${err?.message || err}`
+    } catch (err) {
+      return `Failed to open search tab. Ensure "tabs" permission is granted. Error: ${err}`
     }
   }
 }

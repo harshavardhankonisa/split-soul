@@ -13,8 +13,8 @@ export const openTabTool: Tool = {
     try {
       const created = await chrome.tabs.create({ url: target, active: active ?? true })
       return `Opened tab #${created.id} -> ${target}`
-    } catch (e: any) {
-      return `Failed to open tab. Ensure "tabs" permission is granted. Error: ${e?.message || e}`
+    } catch (e) {
+      return `Failed to open tab. Ensure "tabs" permission is granted. Error: ${e}`
     }
   }
 }

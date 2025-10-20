@@ -15,7 +15,6 @@ import {
 } from '@mui/material'
 import { db } from '../../services/dexie/client'
 import type { Chat, User } from '../../interface/database'
-import { createChat } from '../../services/dexie/collections/chat'
 
 export default function ChatManager() {
   const chats =
@@ -35,7 +34,9 @@ export default function ChatManager() {
     const msg = input.trim()
     if (!msg) return
     setInput('')
-    await createChat({ username: 'Main Body', message: msg })
+    await new Promise<void>(resolve =>
+      chrome.runtime.sendMessage({ type: 'MAIN_BODY_CHAT', message: msg }, () => resolve())
+    )
   }
 
   return (
