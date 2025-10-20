@@ -49,7 +49,7 @@ export class AgendaManager {
 
       const votedAgendas = await this.voteOnAgendas(users)
 
-      await this.createActionsFromVotes(votedAgendas, users[0])
+      await this.createActionsFromVotes(votedAgendas)
 
       this.activeAgendas = []
       console.log('Active agendas cleared')
@@ -91,37 +91,30 @@ export class AgendaManager {
     return votedAgendas
   }
 
-  private async createActionsFromVotes(votedAgendas: VotedAgenda[], createdBy: User) {
+  private async createActionsFromVotes(votedAgendas: VotedAgenda[]) {
     const existingActions = await getAllActions()
 
     for (const votedAgenda of votedAgendas) {
       if (votedAgenda.votes > 0) {
-        const actionName = votedAgenda.description.substring(0, 50)
-        const existingAction = existingActions.find(a => a.name === actionName)
+        const existingAction = existingActions.find(a => a.description)
 
         if (existingAction) {
           await updateAction(existingAction.id, {
             description: votedAgenda.description,
             priority: 'high'
           })
-          console.log(
-            `Action updated: ${actionName} with ${votedAgenda.votes} votes from ${votedAgenda.voters.join(', ')}`
-          )
+          console.log(`Action updated: with ${votedAgenda.votes} votes from ${votedAgenda.voters.join(', ')}`)
         } else {
           const action: Omit<Action, 'id'> = {
-            name: actionName,
             description: votedAgenda.description,
             createdAt: new Date(),
-            createdBy,
             priority: 'high',
             isCompleted: false,
             vector: []
           }
 
           await createAction(action)
-          console.log(
-            `Action created: ${actionName} with ${votedAgenda.votes} votes from ${votedAgenda.voters.join(', ')}`
-          )
+          console.log(`Action created: ${votedAgenda.votes} votes from ${votedAgenda.voters.join(', ')}`)
         }
       }
     }

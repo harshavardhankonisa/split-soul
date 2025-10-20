@@ -29,7 +29,7 @@ export interface Activity {
 // Chat Fields
 export interface Chat {
   id: number
-  user: string // user name
+  username: string // username
   message: string
   createdAt: Date
   vector: number[]
@@ -38,10 +38,8 @@ export interface Chat {
 // Action Fields
 export interface Action {
   id: number
-  name: string
   description: string
   createdAt: Date
-  createdBy: User
   priority: Priority
   isCompleted: boolean
   vector: number[]

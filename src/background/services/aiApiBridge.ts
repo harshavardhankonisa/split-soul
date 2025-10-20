@@ -84,4 +84,4 @@ export class AiApiBridge {
   }
 }
 
-export const aiBridge = AiApiBridge.getInstance()
+export const aiApiBridge = AiApiBridge.getInstance()

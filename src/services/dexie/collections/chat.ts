@@ -13,7 +13,7 @@ function invalidateCachesForChat() {
 
 async function withChatEmbedding(chat: Chat): Promise<Chat> {
   // TODO: add necesary items here to store vectors not only username and description
-  const textForEmbedding = `${chat.user} ${chat.message}`
+  const textForEmbedding = `${chat.username} ${chat.message}`
   const vector = await getEmbeddingFromText(textForEmbedding)
   return { ...chat, vector }
 }

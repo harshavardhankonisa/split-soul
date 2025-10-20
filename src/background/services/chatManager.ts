@@ -34,7 +34,7 @@ export class ChatManager {
     const opinion = await this.soulOpinionAgent._call(opinionPrompt)
 
     await createChat({
-      user: soul.username,
+      username: soul.username,
       message: opinion
     })
 
@@ -64,7 +64,7 @@ export class ChatManager {
   public async addChat(chat: Omit<Chat, 'id' | 'createdAt' | 'vector'>) {
     await createChat(chat)
 
-    if (chat.user === 'Main Soul') {
+    if (chat.username === 'Main Soul') {
       await this.triggerMultiSoulOpinions(chat.message)
     }
   }

@@ -13,7 +13,7 @@ function invalidateCachesForAction() {
 
 async function withActionEmbedding(action: Action): Promise<Action> {
   // TODO: add necesary items here to store vectors not only username and description
-  const textForEmbedding = `${action.name} ${action.description}`
+  const textForEmbedding = `${action.description}`
   const vector = await getEmbeddingFromText(textForEmbedding)
   return { ...action, vector }
 }

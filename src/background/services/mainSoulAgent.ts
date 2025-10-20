@@ -1,5 +1,6 @@
 import { activityTracker } from './activityTracker'
-import { aiBridge } from './aiApiBridge'
+import { aiApiBridge } from './aiApiBridge'
+import { chatManager } from './chatManager'
 
 export class MainSoulAgent {
   private lastActiveTime = Date.now()
@@ -51,13 +52,17 @@ export class MainSoulAgent {
       .join(', ')
 
     try {
-      const summary = await aiBridge.summarize(activityDetails, {
+      const summary = await aiApiBridge.summarize(activityDetails, {
         type: 'tldr',
         format: 'plain-text',
-        length: 'medium'
+        length: 'medium',
+        context: ''
       })
 
-      console.log('Active Tabs Summary:', summary)
+      chatManager.addChat({
+        username: 'Main Soul',
+        message: `Here's a summary of your recent activities: ${summary}`
+      })
     } catch (error) {
       console.error('Failed to summarize activities:', error)
     }

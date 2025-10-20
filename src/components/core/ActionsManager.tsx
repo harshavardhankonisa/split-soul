@@ -31,7 +31,6 @@ const ActionsManager = () => {
             <div key={action.id} className='border rounded p-3 bg-green-50'>
               <div className='flex justify-between items-start'>
                 <div>
-                  <p className='font-semibold text-sm'>{action.name}</p>
                   <p className='text-xs text-gray-600 mt-1'>{new Date(action.createdAt).toLocaleTimeString()}</p>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded ${action.isCompleted ? 'bg-green-200' : 'bg-yellow-200'}`}>
