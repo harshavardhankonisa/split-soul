@@ -1,7 +1,3 @@
-/**
- * WriterHandler - Handles Writer API calls from background script via content script
- */
-
 import { WriterAPI } from '../../../services/API/writer'
 
 class WriterHandler {

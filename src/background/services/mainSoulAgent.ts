@@ -13,6 +13,7 @@ export class MainSoulAgent {
   private startActiveTabsTimer() {
     setInterval(() => this.processActiveTabs(), this.ACTIVE_TABS_CHECK_INTERVAL)
   }
+
   private async isSimilarSummary(prev: string, current: string): Promise<boolean> {
     const prompt = `You are a strict comparator. Compare two short summaries of recent browsing activity.
       If they convey essentially the same meaning (same sites focus and time emphasis), answer ONLY "SIMILAR".
