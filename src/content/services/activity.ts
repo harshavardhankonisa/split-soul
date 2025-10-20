@@ -65,9 +65,7 @@ class UserActivityDetector {
       return
     }
     this.lastUpdateSent = now
-    chrome.runtime.sendMessage({ type: 'ACTIVITY_TRACKER' }).catch(error => {
-      console.debug('Could not send activity to background:', error)
-    })
+    chrome.runtime.sendMessage({ type: 'ACTIVITY_TRACKER' })
   }
 }
 

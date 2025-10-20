@@ -13,7 +13,7 @@ export class SplitSoulDB extends Dexie {
       users: '++id, &username, description, avatarUrl, isActive, vector',
       activities:
         '++id, tabId, websiteTitle, websiteUrl, isActive, startTime, endTime, lastActivityTime, activeDuration, createdAt, updatedAt, vector',
-      chats: '++id, &user, createdAt, vector',
+      chats: '++id, username, createdAt, vector',
       actions: '++id, createdAt, createdBy, vector'
     })
   }

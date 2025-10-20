@@ -2,6 +2,7 @@ import type { Chat, User } from '../../interface/database'
 import { SoulOpinionAgent } from '../../services/agents/SoulOpinionAgent'
 import { createChat, getAllChats } from '../../services/dexie/collections/chat'
 import { getAllUsers } from '../../services/dexie/collections/user'
+import { agendaManager } from './agendaManager'
 
 export class ChatManager {
   private soulOpinionAgent = new SoulOpinionAgent({})
@@ -44,8 +45,19 @@ export class ChatManager {
     const customSouls = (await getAllUsers()).filter(
       u => u.username !== 'Main Soul' && u.username !== 'Main Body' && u.isActive
     )
+
+    const discussionParts: string[] = [`Main Message: ${message}\n`]
+
     for (const soul of customSouls) {
-      this.getSoulOpinion(soul, message)
+      const opinion = await this.getSoulOpinion(soul, message)
+      if (opinion) {
+        discussionParts.push(`👤 ${soul.username}: ${opinion}`)
+      }
+    }
+
+    if (discussionParts.length > 1) {
+      const discussionDescription = discussionParts.join('\n\n')
+      agendaManager.createAgenda(discussionDescription)
     }
   }
 
