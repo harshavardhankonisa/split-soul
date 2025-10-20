@@ -1,36 +1,94 @@
-'use client'
-
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Action } from '../../interface/database'
 import { getAllActions } from '../../services/dexie/collections/action'
+import { useState } from 'react'
+import { runActionDescription } from '../../services/agents/ActionExecutionAgent/index'
+import {
+  Box,
+  Paper,
+  Typography,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Chip,
+  Stack,
+  Divider
+} from '@mui/material'
 
 const ActionsManager = () => {
   const actions = (useLiveQuery(async () => getAllActions(), []) as Action[] | undefined) || []
+  const [executingId, setExecutingId] = useState<number | null>(null)
+  const [lastOutput, setLastOutput] = useState<string>('')
+
+  const handleRun = async (action: Action) => {
+    setExecutingId(action.id)
+    const output = await runActionDescription(action.description)
+    setLastOutput(output)
+    setExecutingId(null)
+  }
 
   return (
-    <div className='p-4'>
-      <h2 className='text-lg font-bold mb-4'>Live Actions</h2>
-      {actions.length === 0 ? (
-        <p className='text-gray-500'>No active actions</p>
-      ) : (
-        <div className='space-y-3'>
-          {actions.map((action: Action) => (
-            <div key={action.id} className='border rounded p-3 bg-green-50'>
-              <div className='flex justify-between items-start'>
-                <div>
-                  <p className='text-xs text-gray-600 mt-1'>{new Date(action.createdAt).toLocaleTimeString()}</p>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded ${action.isCompleted ? 'bg-green-200' : 'bg-yellow-200'}`}>
-                  {action.isCompleted ? 'Done' : 'Pending'}
-                </span>
-              </div>
-              <p className='text-sm mt-2 text-gray-700'>{action.description}</p>
-              <p className='text-xs text-gray-500 mt-2'>Priority: {action.priority}</p>
-            </div>
-          ))}
-        </div>
+    <Box sx={{ p: 2 }}>
+      {lastOutput && (
+        <Paper variant='outlined' sx={{ mb: 2, p: 1.5 }}>
+          <Typography variant='caption' color='text.secondary'>
+            Tool output
+          </Typography>
+          <Divider sx={{ my: 1 }} />
+          <Typography variant='body2' sx={{ whiteSpace: 'pre-wrap' }}>
+            {lastOutput}
+          </Typography>
+        </Paper>
       )}
-    </div>
+
+      <Paper variant='outlined'>
+        <Box sx={{ p: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant='subtitle1'>Live Actions</Typography>
+        </Box>
+
+        {actions.length === 0 ? (
+          <Typography variant='body2' color='text.secondary' sx={{ p: 2 }}>
+            No active actions
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {actions.map((action: Action) => {
+              const time = new Date(action.createdAt as unknown as number).toLocaleTimeString()
+              const statusLabel = executingId === action.id ? 'Running…' : action.isCompleted ? 'Done' : 'Pending'
+              const statusColor: 'success' | 'warning' | 'default' =
+                executingId === action.id ? 'warning' : action.isCompleted ? 'success' : 'warning'
+
+              return (
+                <ListItem
+                  key={action.id}
+                  disablePadding
+                  secondaryAction={<Chip size='small' color={statusColor} label={statusLabel} variant='filled' />}
+                >
+                  <ListItemButton onClick={() => handleRun(action)} disabled={executingId === action.id}>
+                    <ListItemText
+                      primary={
+                        <Stack direction='row' alignItems='center' justifyContent='space-between' spacing={1}>
+                          <Typography variant='body1'>{action.description}</Typography>
+                          <Typography variant='caption' color='text.disabled'>
+                            {time}
+                          </Typography>
+                        </Stack>
+                      }
+                      secondary={
+                        <Typography variant='caption' color='text.secondary'>
+                          Priority: {action.priority}
+                        </Typography>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
+              )
+            })}
+          </List>
+        )}
+      </Paper>
+    </Box>
   )
 }
 

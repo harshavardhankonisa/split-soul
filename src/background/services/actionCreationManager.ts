@@ -2,6 +2,7 @@ import type { Action, User } from '../../interface/database'
 import { createAction, getAllActions, updateAction } from '../../services/dexie/collections/action'
 import { getAllUsers } from '../../services/dexie/collections/user'
 import { aiApiBridge } from './aiApiBridge'
+import { getToolsForPrompt } from '../../services/agents/ActionExecutionAgent'
 
 export class ActionCreationManager {
   private async getActiveSplitSouls(): Promise<User[]> {
@@ -10,11 +11,20 @@ export class ActionCreationManager {
   }
 
   private async getActionSuggestionsForSoul(soul: User, message: string): Promise<string[]> {
+    const toolsManifest = getToolsForPrompt()
     const prompt = `
       You are ${soul.username}. Role: ${soul.description}
       User message: "${message}"
-      Suggest up to 2 concrete, user-facing actions you recommend taking next.
-      Return each action on its own line prefixed with "- ". No extra commentary.`
+
+      Available executable tools you can rely on:
+      ${toolsManifest}
+
+      Task: Suggest up to 2 concrete, user-facing actions that can be executed using one of the available tools above.
+      Guidelines:
+      - Ensure each action is practically executable by mapping to at least one tool's capability.
+      - Be specific and succinct; include key arguments inline in natural language.
+      - Output format: one action per line prefixed with "- ", plain English (no JSON, no tool call syntax).
+    `
 
     const raw = await aiApiBridge.prompt(prompt)
     return raw
