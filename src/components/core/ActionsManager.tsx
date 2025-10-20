@@ -1,24 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import type { Action } from '../../interface/database'
 import { getAllActions } from '../../services/dexie/collections/action'
 
 const ActionsManager = () => {
-  const [actions, setActions] = useState<Action[]>([])
-
-  useEffect(() => {
-    const pollActions = setInterval(async () => {
-      try {
-        const response = await getAllActions()
-        setActions(response || [])
-      } catch (error) {
-        console.error('Failed to fetch actions:', error)
-      }
-    }, 1000)
-
-    return () => clearInterval(pollActions)
-  }, [])
+  const actions = (useLiveQuery(async () => getAllActions(), []) as Action[] | undefined) || []
 
   return (
     <div className='p-4'>
@@ -27,7 +14,7 @@ const ActionsManager = () => {
         <p className='text-gray-500'>No active actions</p>
       ) : (
         <div className='space-y-3'>
-          {actions.map(action => (
+          {actions.map((action: Action) => (
             <div key={action.id} className='border rounded p-3 bg-green-50'>
               <div className='flex justify-between items-start'>
                 <div>
