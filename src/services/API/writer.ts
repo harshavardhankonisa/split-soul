@@ -11,6 +11,11 @@ export const WriterAPI = {
     return await window.Writer?.availability?.()
   },
 
+  async create(): Promise<void> {
+    // @ts-expect-error - Chrome Writer API
+    await window.Writer?.create?.({})
+  },
+
   async write(prompt: string, options?: WriterOptions): Promise<string> {
     // @ts-expect-error - Chrome Writer API
     const writer = await window.Writer?.create?.(options)

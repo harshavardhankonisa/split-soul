@@ -12,6 +12,11 @@ export const TranslatorAPI = {
     })
   },
 
+  async create(p0: { sourceLanguage: string; targetLanguage: string }): Promise<void> {
+    // @ts-expect-error - Chrome Translator API
+    await window.Translator?.create?.({ ...p0 })
+  },
+
   async translate(text: string, options: TranslatorOptions): Promise<string> {
     // @ts-expect-error - Chrome Translator API
     const translator = await window.Translator?.create?.({

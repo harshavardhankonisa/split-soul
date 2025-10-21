@@ -13,6 +13,11 @@ export const PromptAPI = {
     return await window.LanguageModel?.availability?.()
   },
 
+  async create(): Promise<void> {
+    // @ts-expect-error - Chrome LanguageModel API
+    await window.LanguageModel?.create?.({})
+  },
+
   async prompt(text: string, options?: PromptOptions): Promise<string> {
     const createOptions: Record<string, unknown> = {
       temperature: options?.temperature,

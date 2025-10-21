@@ -19,6 +19,11 @@ export const ProofreaderAPI = {
     return await window.Proofreader?.availability?.()
   },
 
+  async create(): Promise<void> {
+    // @ts-expect-error - Chrome Proofreader API
+    await window.Proofreader?.create?.({})
+  },
+
   async proofread(text: string, options?: ProofreadOptions): Promise<ProofreadResult> {
     // @ts-expect-error - Chrome Proofreader API
     const proofreader = await window.Proofreader?.create?.({

@@ -11,6 +11,11 @@ export const RewriterAPI = {
     return await window.Rewriter?.availability?.()
   },
 
+  async create(): Promise<void> {
+    // @ts-expect-error - Chrome Rewriter API
+    await window.Rewriter?.create?.({})
+  },
+
   async rewrite(text: string, options?: RewriterOptions & { context?: string }): Promise<string> {
     // @ts-expect-error - Chrome Rewriter API
     const rewriter = await window.Rewriter?.create?.({

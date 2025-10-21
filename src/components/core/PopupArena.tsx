@@ -44,7 +44,7 @@ export default function PopupArena({
           <Typography variant='h6'>{tabs[currentView].label}</Typography>
           <Typography variant='subtitle2'>{tabs[currentView].description}</Typography>
         </Paper>
-        {tabs[currentView].component && <Box sx={{ p: 2 }}>{tabs[currentView].component}</Box>}
+        {tabs[currentView].component && <Box sx={{ px: 1, py: 2 }}>{tabs[currentView].component}</Box>}
       </Box>
       <Divider sx={{ width: '100%' }} />
       <MobileStepper
