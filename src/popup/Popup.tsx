@@ -18,7 +18,8 @@ export default function Popup() {
   const tabs: Tab[] = [
     {
       label: 'Home',
-      description: 'Welcome to Split Soul! Select a tab to get started.',
+      description:
+        'Welcome to Split Soul! Your digital companions are ready to assist you in the background while you continue working as usual.',
       component: <Home />,
       icon: <HomeIcon />
     },
@@ -30,7 +31,7 @@ export default function Popup() {
     },
     {
       label: 'Chat Manager',
-      description: 'Talk with your split souls as main soul.',
+      description: 'Talk with your split souls as Main Body.',
       component: <ChatManager />,
       icon: <ChatIcon />
     },
@@ -42,7 +43,7 @@ export default function Popup() {
     },
     {
       label: 'Settings',
-      description: 'Configure API keys and extension preferences.',
+      description: 'Configure extension preferences.',
       component: <SettingsManager />,
       icon: <SettingsIcon />
     }

@@ -21,7 +21,7 @@ async function withChatEmbedding(chat: Chat): Promise<Chat> {
 // CREATE CHAT
 export async function createChat(chat: Omit<Chat, 'id' | 'createdAt' | 'vector'>) {
   try {
-    const chatWithVector = await withChatEmbedding({ ...chat, createdAt: Date.now() } as unknown as Chat)
+    const chatWithVector = await withChatEmbedding({ ...chat, createdAt: new Date() } as unknown as Chat)
     invalidateCachesForChat()
     return await db.chats.add(chatWithVector)
   } catch (error) {

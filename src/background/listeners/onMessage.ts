@@ -14,7 +14,7 @@ export const setupOnMessage = () => {
     if (message.type === 'MAIN_BODY_CHAT') {
       chatManager.addChat({
         username: 'Main Body',
-        message
+        message: message.message
       })
     }
 

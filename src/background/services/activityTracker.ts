@@ -101,7 +101,6 @@ class ActivityTracker {
           activity.isActive = true
           activity.lastActivityTime = new Date()
           activity.updatedAt = new Date()
-          activity.activeDuration += this.ACTIVITY_CHECK_INTERVAL
         }
         const timeSinceLastActivity = now - activity.lastActivityTime.getTime()
         if (timeSinceLastActivity >= this.IDLE_TIMEOUT && activity.isActive) {

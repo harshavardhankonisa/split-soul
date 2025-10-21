@@ -5,10 +5,10 @@ import createLRU, { cacheDel, cacheGet, cacheSet } from '../../../utils/cache'
 import { semanticSimilaritySearch } from '../../transformers/vectorSearch'
 
 const CACHE_TTL_MS = 1000 * 60 * 5
-const allActivitysCache = createLRU<Activity[]>({ max: 1, ttl: CACHE_TTL_MS })
+const allActivitiesCache = createLRU<Activity[]>({ max: 1, ttl: CACHE_TTL_MS })
 
 function invalidateCachesForActivity() {
-  cacheDel(allActivitysCache, 'all')
+  cacheDel(allActivitiesCache, 'all')
 }
 
 async function withActivityEmbedding(activity: Activity): Promise<Activity> {
@@ -67,12 +67,12 @@ export async function deleteActivity(id: number) {
 }
 
 // GET ALL ACTIVITIES
-export async function getAllActivitys() {
-  const cached = cacheGet(allActivitysCache, 'all')
+export async function getAllActivities() {
+  const cached = cacheGet(allActivitiesCache, 'all')
   if (cached) return cached
   try {
     const activities = await db.activities.toArray()
-    cacheSet(allActivitysCache, 'all', activities)
+    cacheSet(allActivitiesCache, 'all', activities)
     return activities
   } catch (error) {
     console.error('Error fetching all activities:', error)
@@ -81,9 +81,9 @@ export async function getAllActivitys() {
 }
 
 // VECTOR SEARCH
-export async function searchActivitysByVector(query: string) {
+export async function searchActivitiesByVector(query: string) {
   try {
-    const activities = await getAllActivitys()
+    const activities = await getAllActivities()
     if (!activities.length) return []
     const queryVector = await getEmbeddingFromText(query)
     const results = semanticSimilaritySearch<Activity>(activities, queryVector)
