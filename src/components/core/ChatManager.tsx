@@ -50,13 +50,12 @@ export default function ChatManager() {
           <List dense>
             {chats.map(c => {
               const user = userMap.get(c.username)
-              const avatarSrc = user?.avatarUrl || undefined
               const initials = c.username?.[0]?.toUpperCase() || '?'
-              const time = c.createdAt ? new Date(c.createdAt as unknown as number).toLocaleTimeString() : ''
+              const time = c.createdAt ? new Date(c.createdAt).toLocaleTimeString() : ''
               return (
                 <ListItem key={c.id} alignItems='flex-start'>
                   <ListItemAvatar>
-                    <Avatar src={avatarSrc}>{!avatarSrc && initials}</Avatar>
+                    <Avatar>{initials}</Avatar>
                   </ListItemAvatar>
                   <ListItemText
                     primary={

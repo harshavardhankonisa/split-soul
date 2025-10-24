@@ -99,7 +99,7 @@ export class ActionCreationManager {
       }
       await createAction({
         description: v.description,
-        createdAt: new Date(),
+        createdAt: Date.now(),
         priority: 'low',
         isCompleted: false,
         vector: []

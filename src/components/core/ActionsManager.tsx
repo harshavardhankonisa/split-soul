@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Action } from '../../interface/database'
-import { getAllActions, updateAction } from '../../services/dexie/collections/action'
+import { getAllActions, updateAction, deleteAction } from '../../services/dexie/collections/action'
 import { useState } from 'react'
 import { runActionDescription } from '../../services/agents/ActionExecutionAgent/index'
 import {
@@ -29,7 +29,8 @@ import {
   Edit as EditIcon,
   PlayArrow as PlayArrowIcon,
   ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon
+  ExpandLess as ExpandLessIcon,
+  Delete
 } from '@mui/icons-material'
 
 interface ActionOutput {
@@ -99,6 +100,12 @@ const ActionsManager = () => {
     })
   }
 
+  const handleDelete = async (action: Action) => {
+    if (window.confirm(`Delete action "${action.description}"?`)) {
+      await deleteAction(action.id)
+    }
+  }
+
   const isExecuting = (actionId: number) => executingState[actionId] || false
   const hasOutput = (actionId: number) => actionOutputs[actionId] !== undefined
   const isExpanded = (actionId: number) => expandedActions.has(actionId)
@@ -140,7 +147,7 @@ const ActionsManager = () => {
       ) : (
         <List disablePadding>
           {actions.map((action: Action) => {
-            const time = new Date(action.createdAt as unknown as number).toLocaleTimeString()
+            const time = new Date(action.createdAt).toLocaleTimeString()
             const executing = isExecuting(action.id)
             const output = actionOutputs[action.id]
             const expanded = isExpanded(action.id)
@@ -222,6 +229,11 @@ const ActionsManager = () => {
                     >
                       {executing ? 'Running' : 'Run'}
                     </Button>
+                    <Tooltip title='Delete action'>
+                      <IconButton size='small' color='error' onClick={() => handleDelete(action)} disabled={executing}>
+                        <Delete fontSize='small' />
+                      </IconButton>
+                    </Tooltip>
                   </Stack>
                 </Box>
 

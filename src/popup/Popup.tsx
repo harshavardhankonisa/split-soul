@@ -1,6 +1,4 @@
-import { Container } from '@mui/material'
-import PopupSettings from '../components/core/PopupSettings'
-import PopupArena from '../components/core/PopupArena'
+import { Box, Container, Divider, Paper, Typography } from '@mui/material'
 import React from 'react'
 import Home from '../components/core/Home'
 import ActionsManager from '../components/core/ActionsManager'
@@ -18,16 +16,15 @@ export default function Popup() {
   const tabs: Tab[] = [
     {
       label: 'Home',
-      description:
-        'Welcome to Split Soul! Your digital companions are ready to assist you in the background while you continue working as usual.',
+      description: 'Welcome to Split Soul! Set up souls to get started.',
       component: <Home />,
       icon: <HomeIcon />
     },
     {
-      label: 'Action Manager',
-      description: 'Manage your actions.',
-      component: <ActionsManager />,
-      icon: <CallToActionIcon />
+      label: 'Manage Souls',
+      description: 'Enable, disable, or create, edit and delete new souls. Soul Names should be unique.',
+      component: <SoulsManager />,
+      icon: <PeopleIcon />
     },
     {
       label: 'Chat Manager',
@@ -36,10 +33,10 @@ export default function Popup() {
       icon: <ChatIcon />
     },
     {
-      label: 'Manage Souls',
-      description: 'Enable, disable, or create, edit and delete new souls.',
-      component: <SoulsManager />,
-      icon: <PeopleIcon />
+      label: 'Action Manager',
+      description: 'Manage your actions.',
+      component: <ActionsManager />,
+      icon: <CallToActionIcon />
     },
     {
       label: 'Settings',
@@ -64,8 +61,54 @@ export default function Popup() {
         overflow: 'hidden'
       }}
     >
-      <PopupSettings tabs={tabs} setCurrentView={setCurrentView} />
-      <PopupArena tabs={tabs} currentView={currentView} setCurrentView={setCurrentView} />
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'end',
+          alignItems: 'center',
+          padding: 1.5,
+          width: '100%',
+          gap: 1
+        }}
+      >
+        {tabs.map((tab, index) => (
+          <Box
+            sx={{
+              height: 24,
+              width: 24,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: currentView === index ? 'primary.main' : 'text.secondary'
+            }}
+            onClick={() => setCurrentView(index)}
+            key={index}
+          >
+            {tab.icon}
+          </Box>
+        ))}
+      </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden',
+          width: '100%'
+        }}
+      >
+        <Box sx={{ width: '100%', height: '100%', overflowY: 'scroll', scrollbarWidth: 'none' }}>
+          <Paper sx={{ px: 2, py: 1 }}>
+            <Typography variant='h6'>{tabs[currentView].label}</Typography>
+            <Typography variant='subtitle2'>{tabs[currentView].description}</Typography>
+          </Paper>
+          {tabs[currentView].component && <Box sx={{ px: 1, py: 2 }}>{tabs[currentView].component}</Box>}
+        </Box>
+        <Divider sx={{ width: '100%', mb: 2 }} />
+      </Box>
     </Container>
   )
 }

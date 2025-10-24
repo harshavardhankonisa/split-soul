@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Box, Button, Paper, Stack, TextField } from '@mui/material'
-import { getAllUsers, createUser, updateUser } from '../../services/dexie/collections/user'
+import { getAllUsers, createUser, updateUser, deleteUser } from '../../services/dexie/collections/user'
 import type { User } from '../../interface/database'
 import { SoulCard } from '../common/SoulCard'
 
 const addUserInitialState = {
   username: '',
-  description: '',
-  avatarUrl: ''
+  description: ''
 } as User
 
 export default function SoulsManager() {
@@ -15,13 +14,12 @@ export default function SoulsManager() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [addModalState, setAddModalState] = useState<User>(addUserInitialState)
 
-  const handleSoulsMutation = useCallback(async (action: 'add' | 'edit', data?: User) => {
+  const handleSoulsMutation = useCallback(async (action: 'add' | 'edit' | 'delete', data?: User) => {
     if (action === 'add') {
-      if (data)
+      if (data && data.username.trim().length > 0)
         await createUser({
           username: data.username,
           description: data.description ?? '',
-          avatarUrl: data.avatarUrl ?? '',
           isActive: true,
           vector: []
         })
@@ -29,14 +27,18 @@ export default function SoulsManager() {
       setAddModalState(addUserInitialState)
     }
     if (action === 'edit') {
-      if (data) {
+      if (data && data.username.trim().length > 0) {
         await updateUser(data.id, {
           username: data.username,
           description: data.description ?? '',
-          avatarUrl: data.avatarUrl ?? '',
           isActive: data.isActive ?? true,
           vector: data.vector ?? []
         })
+      }
+    }
+    if (action === 'delete') {
+      if (data) {
+        await deleteUser(data.id)
       }
     }
 

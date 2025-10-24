@@ -1,5 +1,5 @@
 import { Box, Typography, Button, IconButton, CardContent, Card, Stack, Paper, TextField } from '@mui/material'
-import { Close, Edit, ToggleOff, ToggleOn } from '@mui/icons-material'
+import { Delete, Edit, ToggleOff, ToggleOn } from '@mui/icons-material'
 import type { User } from '../../interface/database'
 import { useState } from 'react'
 
@@ -8,7 +8,7 @@ export const SoulCard = ({
   handleSoulsMutation
 }: {
   user: User
-  handleSoulsMutation: (action: 'add' | 'edit', data?: User) => void
+  handleSoulsMutation: (action: 'add' | 'edit' | 'delete', data?: User) => void
 }) => {
   const [userData, setUserData] = useState<User>(user)
   const [isEditing, setIsEditing] = useState(false)
@@ -31,12 +31,27 @@ export const SoulCard = ({
           <Typography variant='subtitle1' fontWeight={600}>
             {user.username}
           </Typography>
-          <Typography variant='body2' color='text.secondary'>
+          <Typography
+            variant='body2'
+            color='text.secondary'
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical'
+            }}
+          >
             {user.description}
           </Typography>
         </CardContent>
 
-        <Stack direction='row' spacing={1} pr={1}>
+        <Stack
+          direction='row'
+          spacing={1}
+          pr={1}
+          display={user.username === 'Main Body' || user.username === 'Main Soul' ? 'none' : 'flex'}
+        >
           <IconButton
             color={user.isActive ? 'success' : 'default'}
             size='small'
@@ -44,11 +59,14 @@ export const SoulCard = ({
               handleSoulsMutation('edit', { ...user, isActive: !user.isActive })
             }}
           >
-            {user.isActive ? <ToggleOn width={20} height={20} /> : <ToggleOff width={20} height={20} />}
+            {user.isActive ? <ToggleOn fontSize='small' /> : <ToggleOff fontSize='small' />}
           </IconButton>
 
-          <IconButton color='primary' size='small' onClick={() => setIsEditing(!isEditing)}>
-            {isEditing ? <Close width={20} height={20} /> : <Edit width={20} height={20} />}
+          <IconButton color='primary' size='small' onClick={() => setIsEditing(true)}>
+            <Edit fontSize='small' />
+          </IconButton>
+          <IconButton color='error' size='small' onClick={() => handleSoulsMutation('delete', user)}>
+            <Delete fontSize='small' />
           </IconButton>
         </Stack>
       </Box>

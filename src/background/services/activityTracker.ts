@@ -44,13 +44,13 @@ class ActivityTracker {
       return
     }
 
-    const now = new Date()
+    const now = Date.now()
     const activity: Omit<Activity, 'id'> = {
       tabId,
       websiteTitle: tab.title || '',
       websiteUrl: tab.url!,
       startTime: now,
-      endTime: new Date(0),
+      endTime: 0,
       isActive: true,
       lastActivityTime: now,
       activeDuration: 0,
@@ -66,7 +66,7 @@ class ActivityTracker {
     const existingActivity = this.activeActivities.get(tabId)
     if (existingActivity) {
       existingActivity.isActive = true
-      const now = new Date()
+      const now = Date.now()
       existingActivity.lastActivityTime = now
       existingActivity.updatedAt = now
       existingActivity.websiteUrl = tab.url || existingActivity.websiteUrl
@@ -79,7 +79,7 @@ class ActivityTracker {
   private async endActivity(tabId: number) {
     const activity = this.activeActivities.get(tabId)
     if (!activity) return
-    const now = new Date()
+    const now = Date.now()
     activity.endTime = now
     activity.isActive = false
     activity.updatedAt = now
@@ -99,13 +99,13 @@ class ActivityTracker {
         const tab = await chrome.tabs.get(activity.tabId)
         if (tab.audible) {
           activity.isActive = true
-          activity.lastActivityTime = new Date()
-          activity.updatedAt = new Date()
+          activity.lastActivityTime = now
+          activity.updatedAt = now
         }
-        const timeSinceLastActivity = now - activity.lastActivityTime.getTime()
+        const timeSinceLastActivity = now - activity.lastActivityTime
         if (timeSinceLastActivity >= this.IDLE_TIMEOUT && activity.isActive) {
           activity.isActive = false
-          activity.updatedAt = new Date()
+          activity.updatedAt = now
           await updateActivity(activity.id, {
             isActive: false,
             updatedAt: activity.updatedAt,
@@ -113,7 +113,7 @@ class ActivityTracker {
           })
         } else if (activity.isActive) {
           activity.activeDuration += this.ACTIVITY_CHECK_INTERVAL
-          activity.updatedAt = new Date()
+          activity.updatedAt = now
         }
       }
     }, this.ACTIVITY_CHECK_INTERVAL)
@@ -123,7 +123,7 @@ class ActivityTracker {
     for (const activity of this.activeActivities.values()) {
       if (activity.isActive) {
         activity.isActive = false
-        activity.updatedAt = new Date()
+        activity.updatedAt = Date.now()
         await updateActivity(activity.id, {
           isActive: false,
           updatedAt: activity.updatedAt,
@@ -189,7 +189,7 @@ class ActivityTracker {
     if (tabId == null) return
     const activity = this.activeActivities.get(tabId)
     if (activity) {
-      const now = new Date()
+      const now = Date.now()
       activity.lastActivityTime = now
       activity.websiteUrl = sender.tab?.url || activity.websiteUrl
       activity.websiteTitle = sender.tab?.title || activity.websiteTitle

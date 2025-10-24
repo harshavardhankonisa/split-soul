@@ -5,7 +5,6 @@ export interface User {
   id: number // unique
   username: string // unique
   description: string
-  avatarUrl: string
   isActive: boolean
   vector: number[]
 }
@@ -17,12 +16,12 @@ export interface Activity {
   websiteTitle: string
   websiteUrl: string
   isActive: boolean
-  startTime: Date
-  endTime: Date
-  lastActivityTime: Date
+  startTime: number // timestamp in milliseconds
+  endTime: number // timestamp in milliseconds
+  lastActivityTime: number // timestamp in milliseconds
   activeDuration: number
-  createdAt: Date
-  updatedAt: Date
+  createdAt: number // timestamp in milliseconds
+  updatedAt: number // timestamp in milliseconds
   vector: number[]
 }
 
@@ -31,7 +30,7 @@ export interface Chat {
   id: number
   username: string // username
   message: string
-  createdAt: Date
+  createdAt: number // timestamp in milliseconds
   vector: number[]
 }
 
@@ -39,7 +38,7 @@ export interface Chat {
 export interface Action {
   id: number
   description: string
-  createdAt: Date
+  createdAt: number // timestamp in milliseconds
   priority: Priority
   isCompleted: boolean
   vector: number[]
