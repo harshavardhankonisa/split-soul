@@ -1,6 +1,6 @@
 # Contributing Guide
 
-Thank you for considering contributing to Spectral Soul!
+Thank you for considering contribution to Split Soul!
 
 ## How to Contribute
 

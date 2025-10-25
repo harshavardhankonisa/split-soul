@@ -1,18 +1,36 @@
-# Project Overview
+# Split Soul Overview
 
-This document provides an overview of the Spectral Soul project, its purpose, and main features.
+Concise overview of the Split Soul Chrome extension.
 
 ## Purpose
 
-Spectral Soul is a React-based web application built with Vite, designed for fast development and modern web standards.
+- Multi-agent companion for browsing
+- Fully client-side; uses Chromes Built-in AI (Prompt, Summarizer, Writer, Rewriter, Translator, Proofreader)
+- Tracks activity and suggests actions (tab management, summaries, agendas)
 
-## Features
+## Architecture (high-level)
 
-- Fast build and hot reload with Vite
-- React 18 support
-- Modular code structure
-- Easy asset management
+- Background (service worker) Orchestrates agents, actions, storage
+- Content script Listens for activity and page context when needed
+- Popup UI Chat with Main/Split Souls; access Settings
+- Offscreen document Runs APIs that require a window (e.g., Summarizer)
+- IndexedDB (Dexie) Stores chats, actions, activities
 
-## Getting Started
+## Key features
 
-Refer to the README.md for setup instructions.
+- Activity tracking: activeDuration with idle timeout; simple, append-only
+- Agents: Main Soul heartbeat every 5 minutes; Split Souls reply when necessary
+- ActionExecutionAgent: 20 tab tools (close, reload, pin, group, mute, move, merge, discard, duplicate, switch, highlight)
+- Agenda manager: 2-minute sweep logs and clears active agendas
+- Settings: fault-tolerant service with validation and sensible defaults
+- Privacy: 100% local by default; no server dependency
+
+## Requirements
+
+- Chrome 138+
+- Permissions: tabs, tabGroups, windows, offscreen, storage, scripting, activeTab
+
+## Next steps
+
+- See installation.md to build and load the extension
+- See usage.md for example prompts and workflows
