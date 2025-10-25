@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Action } from '../../interface/database'
-import { getAllActions, updateAction, deleteAction } from '../../services/dexie/collections/action'
+import { updateAction, deleteAction } from '../../services/dexie/collections/action'
+import { db } from '../../services/dexie/client'
 import { useState } from 'react'
 import { runActionDescription } from '../../services/agents/ActionExecutionAgent/index'
 import {
@@ -15,18 +16,13 @@ import {
   Stack,
   Divider,
   IconButton,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   CircularProgress,
   Collapse,
-  Tooltip
+  Tooltip,
+  TextField
 } from '@mui/material'
 import {
-  Edit as EditIcon,
   PlayArrow as PlayArrowIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
@@ -42,12 +38,18 @@ interface ExecutingState {
 }
 
 const ActionsManager = () => {
-  const actions = (useLiveQuery(async () => getAllActions(), []) as Action[] | undefined) || []
+  const actions =
+    (useLiveQuery(async () => db.actions.orderBy('createdAt').reverse().limit(50).toArray(), []) as
+      | Action[]
+      | undefined) || []
   const [executingState, setExecutingState] = useState<ExecutingState>({})
   const [actionOutputs, setActionOutputs] = useState<ActionOutput>({})
-  const [editingAction, setEditingAction] = useState<Action | null>(null)
-  const [editDescription, setEditDescription] = useState('')
   const [expandedActions, setExpandedActions] = useState<Set<number>>(new Set())
+  const [directInput, setDirectInput] = useState('')
+  const [directOutput, setDirectOutput] = useState<{ executing: boolean; output: string }>({
+    executing: false,
+    output: ''
+  })
 
   const handleRun = async (action: Action) => {
     setExecutingState(prev => ({ ...prev, [action.id]: true }))
@@ -65,27 +67,6 @@ const ActionsManager = () => {
     } finally {
       setExecutingState(prev => ({ ...prev, [action.id]: false }))
     }
-  }
-
-  const handleEditClick = (action: Action) => {
-    setEditingAction(action)
-    setEditDescription(action.description)
-  }
-
-  const handleSaveEdit = async () => {
-    if (editingAction && editDescription.trim()) {
-      await updateAction(editingAction.id, {
-        description: editDescription.trim(),
-        isCompleted: false
-      })
-      setEditingAction(null)
-      setEditDescription('')
-    }
-  }
-
-  const handleCancelEdit = () => {
-    setEditingAction(null)
-    setEditDescription('')
   }
 
   const toggleExpand = (actionId: number) => {
@@ -112,36 +93,74 @@ const ActionsManager = () => {
 
   return (
     <Box>
-      {/* Edit Dialog */}
-      <Dialog open={!!editingAction} onClose={handleCancelEdit} maxWidth='sm' fullWidth>
-        <DialogTitle>Edit Action</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin='dense'
-            label='Action Description'
-            fullWidth
-            variant='outlined'
-            multiline
-            rows={3}
-            value={editDescription}
-            onChange={e => setEditDescription(e.target.value)}
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelEdit}>Cancel</Button>
-          <Button onClick={handleSaveEdit} variant='contained' disabled={!editDescription.trim()}>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Actions List */}
+      <Box sx={{ display: 'flex', gap: 1, my: 1 }}>
+        <TextField
+          size='small'
+          placeholder='Run action directly...'
+          value={directInput}
+          onChange={e => setDirectInput(e.target.value)}
+          onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter' && directInput.trim()) {
+              setDirectOutput({ executing: true, output: '' })
+              try {
+                const output = await runActionDescription(directInput)
+                setDirectOutput({ executing: false, output })
+              } catch (error) {
+                const msg = error instanceof Error ? error.message : 'Unknown error'
+                setDirectOutput({ executing: false, output: `Error: ${msg}` })
+              }
+              setDirectInput('')
+            }
+          }}
+          fullWidth
+        />
+        <Button
+          variant='contained'
+          startIcon={directOutput.executing ? <CircularProgress size={16} /> : <PlayArrowIcon />}
+          onClick={async () => {
+            if (!directInput.trim()) return
+            setDirectOutput({ executing: true, output: '' })
+            try {
+              const output = await runActionDescription(directInput)
+              setDirectOutput({ executing: false, output })
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : 'Unknown error'
+              setDirectOutput({ executing: false, output: `Error: ${msg}` })
+            }
+            setDirectInput('')
+          }}
+          disabled={!directInput.trim() || directOutput.executing}
+        >
+          Run
+        </Button>
+      </Box>
+      {directOutput.output && (
+        <Paper variant='outlined' sx={{ my: 1, p: 1.5, bgcolor: 'background.default' }}>
+          <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 0.5 }}>
+            Output:
+          </Typography>
+          <Box
+            sx={{
+              fontSize: '0.75rem',
+              fontFamily: 'monospace',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              maxHeight: 150,
+              overflow: 'auto'
+            }}
+          >
+            {directOutput.output}
+          </Box>
+        </Paper>
+      )}
+      <Divider sx={{ my: 2 }} />
+      <Typography variant='h6' sx={{ my: 2 }}>
+        Generated Actions
+      </Typography>
       {actions.length === 0 ? (
         <Paper variant='outlined' sx={{ p: 3, textAlign: 'center' }}>
           <Typography variant='body1' color='text.secondary'>
-            No active actions
+            No generated actions yet
           </Typography>
         </Paper>
       ) : (
@@ -161,28 +180,11 @@ const ActionsManager = () => {
 
             return (
               <Paper key={action.id} variant='outlined' sx={{ mb: 2 }}>
-                <ListItem
-                  disablePadding
-                  secondaryAction={
-                    <Stack direction='row' spacing={1} alignItems='center'>
-                      <Chip
-                        size='small'
-                        color={statusColor}
-                        label={statusLabel}
-                        variant={action.isCompleted ? 'filled' : 'outlined'}
-                      />
-                      {hasOutput(action.id) && (
-                        <IconButton size='small' onClick={() => toggleExpand(action.id)}>
-                          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                        </IconButton>
-                      )}
-                    </Stack>
-                  }
-                >
+                <ListItem disablePadding>
                   <ListItemButton onClick={() => toggleExpand(action.id)} disabled={executing} sx={{ flex: 1 }}>
                     <ListItemText
                       primary={
-                        <Stack direction='row' alignItems='center' spacing={1}>
+                        <>
                           <Typography
                             variant='body1'
                             sx={{
@@ -196,30 +198,32 @@ const ActionsManager = () => {
                           <Typography variant='caption' color='text.disabled'>
                             {time}
                           </Typography>
-                        </Stack>
+                        </>
                       }
                       secondary={
                         <Stack direction='row' spacing={2} alignItems='center' sx={{ mt: 0.5 }}>
+                          <Chip
+                            size='small'
+                            color={statusColor}
+                            label={statusLabel}
+                            variant={action.isCompleted ? 'filled' : 'outlined'}
+                          />
                           <Typography variant='caption' color='text.secondary'>
                             Priority: {action.priority}
                           </Typography>
-                          {action.isCompleted && (
-                            <Chip size='small' label='Completed' color='success' variant='filled' />
-                          )}
                         </Stack>
                       }
                     />
                   </ListItemButton>
                 </ListItem>
 
-                {/* Action Controls */}
-                <Box sx={{ px: 2, pb: 1 }}>
+                <Box sx={{ px: 2, py: 1 }}>
                   <Stack direction='row' spacing={1} justifyContent='flex-end'>
-                    <Tooltip title='Edit action'>
-                      <IconButton size='small' onClick={() => handleEditClick(action)} disabled={executing}>
-                        <EditIcon fontSize='small' />
+                    {hasOutput(action.id) && (
+                      <IconButton size='small' onClick={() => toggleExpand(action.id)}>
+                        {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                       </IconButton>
-                    </Tooltip>
+                    )}
                     <Button
                       size='small'
                       variant='contained'
@@ -237,7 +241,6 @@ const ActionsManager = () => {
                   </Stack>
                 </Box>
 
-                {/* Output Section */}
                 <Collapse in={expanded && hasOutput(action.id)} timeout='auto' unmountOnExit>
                   <Divider />
                   <Box sx={{ p: 2 }}>

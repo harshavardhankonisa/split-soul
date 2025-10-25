@@ -94,7 +94,9 @@ export class ActionCreationManager {
       if (v.votes <= 0) continue
       const similarExisting = await this.findSimilarExisting(v.description, existing)
       if (similarExisting) {
-        await updateAction(similarExisting.id, { priority: 'high' })
+        if (!similarExisting.isCompleted) {
+          await updateAction(similarExisting.id, { priority: 'high' })
+        }
         continue
       }
       await createAction({

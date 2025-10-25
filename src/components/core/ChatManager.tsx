@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
   Box,
@@ -10,23 +10,12 @@ import {
   ListItem,
   ListItemAvatar,
   Avatar,
-  ListItemText,
-  Stack
+  ListItemText
 } from '@mui/material'
 import { db } from '../../services/dexie/client'
-import type { Chat, User } from '../../interface/database'
 
 export default function ChatManager() {
-  const chats =
-    (useLiveQuery(async () => db.chats.orderBy('createdAt').reverse().limit(50).toArray(), []) as Chat[] | undefined) ||
-    []
-  const users = useLiveQuery(async () => db.users.toArray(), []) as User[] | undefined
-
-  const userMap = useMemo(() => {
-    const map = new Map<string, User>()
-    for (const u of users ?? []) map.set(u.username, u)
-    return map
-  }, [users])
+  const chats = useLiveQuery(async () => db.chats.orderBy('createdAt').reverse().limit(50).toArray(), []) || []
 
   const [input, setInput] = useState('')
 
@@ -41,48 +30,6 @@ export default function ChatManager() {
 
   return (
     <Box>
-      <Paper variant='outlined' sx={{ height: 260, overflowY: 'auto', mb: 2, p: 1 }}>
-        {chats.length === 0 ? (
-          <Typography variant='body2' color='text.secondary' sx={{ p: 2 }}>
-            No chats yet
-          </Typography>
-        ) : (
-          <List dense>
-            {chats.map(c => {
-              const user = userMap.get(c.username)
-              const initials = c.username?.[0]?.toUpperCase() || '?'
-              const time = c.createdAt ? new Date(c.createdAt).toLocaleTimeString() : ''
-              return (
-                <ListItem key={c.id} alignItems='flex-start'>
-                  <ListItemAvatar>
-                    <Avatar>{initials}</Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-                        <Stack direction='row' spacing={1} alignItems='center'>
-                          <Typography variant='subtitle2'>{c.username}</Typography>
-                          {user?.description && (
-                            <Typography variant='caption' color='text.secondary'>
-                              {user.description}
-                            </Typography>
-                          )}
-                        </Stack>
-                        {time && (
-                          <Typography variant='caption' color='text.disabled'>
-                            {time}
-                          </Typography>
-                        )}
-                      </Box>
-                    }
-                    secondary={<Typography variant='body2'>{c.message}</Typography>}
-                  />
-                </ListItem>
-              )
-            })}
-          </List>
-        )}
-      </Paper>
       <Box sx={{ display: 'flex', gap: 1 }}>
         <TextField
           size='small'
@@ -98,6 +45,40 @@ export default function ChatManager() {
           Send
         </Button>
       </Box>
+      <Paper variant='outlined' sx={{ my: 2 }}>
+        {chats.length === 0 ? (
+          <Typography variant='body2' color='text.secondary' sx={{ p: 2 }}>
+            No chats yet
+          </Typography>
+        ) : (
+          <List dense>
+            {chats.map(c => {
+              const initials = c.username?.[0]?.toUpperCase() || '?'
+              const time = c.createdAt ? new Date(c.createdAt).toTimeString() : ''
+              return (
+                <ListItem key={c.id} alignItems='flex-start'>
+                  <ListItemAvatar>
+                    <Avatar>{initials}</Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Box>
+                        <Typography variant='subtitle1'>{c.username}</Typography>
+                        {time && (
+                          <Typography variant='caption' color='text.disabled'>
+                            {time}
+                          </Typography>
+                        )}
+                      </Box>
+                    }
+                    secondary={<Typography variant='body2'>{c.message}</Typography>}
+                  />
+                </ListItem>
+              )
+            })}
+          </List>
+        )}
+      </Paper>
     </Box>
   )
 }
