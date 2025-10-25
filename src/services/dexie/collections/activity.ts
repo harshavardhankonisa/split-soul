@@ -12,8 +12,9 @@ function invalidateCachesForActivity() {
 }
 
 async function withActivityEmbedding(activity: Activity): Promise<Activity> {
-  // TODO: add necesary items here to store vectors not only username and description
-  const textForEmbedding = `${activity.websiteTitle} ${activity.websiteUrl} ${activity.activeDuration}`
+  const startIso = activity.startTime ? new Date(activity.startTime).toISOString() : ''
+  const lastIso = activity.lastActivityTime ? new Date(activity.lastActivityTime).toISOString() : ''
+  const textForEmbedding = `activity on ${activity.websiteTitle} (${activity.websiteUrl}) | active: ${activity.isActive ? 'yes' : 'no'} | started: ${startIso} | last: ${lastIso} | activeDurationMs: ${activity.activeDuration}`
   const vector = await getEmbeddingFromText(textForEmbedding)
   return { ...activity, vector }
 }

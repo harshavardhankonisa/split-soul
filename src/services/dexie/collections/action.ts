@@ -12,8 +12,8 @@ function invalidateCachesForAction() {
 }
 
 async function withActionEmbedding(action: Action): Promise<Action> {
-  // TODO: add necesary items here to store vectors not only username and description
-  const textForEmbedding = `${action.description}`
+  const createdAtIso = action.createdAt ? new Date(action.createdAt).toISOString() : ''
+  const textForEmbedding = `action: ${action.description} | priority: ${action.priority} | status: ${action.isCompleted ? 'completed' : 'pending'} | created: ${createdAtIso}`
   const vector = await getEmbeddingFromText(textForEmbedding)
   return { ...action, vector }
 }

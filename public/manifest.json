@@ -39,7 +39,9 @@
     "notifications",
     "history",
     "webNavigation",
-    "offscreen"
+    "offscreen",
+    "tabGroups",
+    "windows"
   ],
   "optional_permissions": ["clipboardRead", "clipboardWrite"],
   "commands": {

@@ -12,8 +12,7 @@ function invalidateCachesForUser() {
 }
 
 async function withUserEmbedding(user: User): Promise<User> {
-  // TODO: add necesary items here to store vectors not only username and description
-  const textForEmbedding = `${user.username} ${user.description}`
+  const textForEmbedding = `user ${user.username} | status: ${user.isActive ? 'active' : 'inactive'} | ${user.description}`
   const vector = await getEmbeddingFromText(textForEmbedding)
   return { ...user, vector }
 }
